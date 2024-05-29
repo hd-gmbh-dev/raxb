@@ -4,7 +4,7 @@ members = ["crates/*"]
 
 [workspace.package]
 edition = "2021"
-version = "0.1.0"
+version = "0.2.0"
 description = """
 The Rust Architecture for XML Binding
 """
@@ -16,9 +16,9 @@ categories = []
 keywords = []
 
 [workspace.dependencies]
-raxb = { version = "*", path = "crates/raxb" }
-raxb-derive = { version = "*", path = "crates/raxb-derive" }
-raxb-validate = { version = "*", path = "crates/raxb-validate" }
-raxb-xmlschema = { version = "*", path = "crates/raxb-xmlschema" }
+raxb = { version = "0.2.0", path = "crates/raxb" }
+raxb-derive = { version = "0.2.0", path = "crates/raxb-derive" }
+raxb-validate = { version = "0.2.0", path = "crates/raxb-validate" }
+raxb-xmlschema = { version = "0.2.0", path = "crates/raxb-xmlschema" }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
