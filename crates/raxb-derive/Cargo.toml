@@ -1,0 +1,28 @@
+[package]
+name = "raxb-derive"
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.20"
+heck = "0.5"
+syn = { version = "2", features = [
+    "full",
+    "extra-traits",
+    "visit",
+    "visit-mut",
+] }
+quote = "1.0"
+proc-macro2 = "1.0"

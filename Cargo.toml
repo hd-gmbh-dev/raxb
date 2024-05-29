@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+description = """
+The Rust Architecture for XML Binding
+"""
+rust-version = "1.78.0"
+authors = ["H & D GmbH Open Source <contact-oss@h-d-gmbh.de>"]
+license = "MIT"
+repository = "https://github.com/hd-gmbh-dev/raxb"
+categories = []
+keywords = []
+
+[workspace.dependencies]
+raxb = { version = "*", path = "crates/raxb" }
+raxb-derive = { version = "*", path = "crates/raxb-derive" }
+raxb-validate = { version = "*", path = "crates/raxb-validate" }
+raxb-xmlschema = { version = "*", path = "crates/raxb-xmlschema" }
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
