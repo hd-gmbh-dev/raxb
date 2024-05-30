@@ -13,10 +13,9 @@
 )]
 */
 
-pub trait XmlSchema {}
+pub use raxb_derive::XmlDeserialize;
 
-pub trait XmlElement {}
+pub mod de;
+pub mod ser;
 
-pub trait XmlBackend {}
-
-pub trait XmlContent {}
+pub use quick_xml;

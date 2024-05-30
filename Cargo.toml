@@ -21,4 +21,8 @@ raxb-derive = { version = "0.2.0", path = "crates/raxb-derive" }
 raxb-validate = { version = "0.2.0", path = "crates/raxb-validate" }
 raxb-xmlschema = { version = "0.2.0", path = "crates/raxb-xmlschema" }
 
+anyhow = "1"
+thiserror = "1"
+quick-xml = {version = "0.31", features = ["serialize", "encoding"]}
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

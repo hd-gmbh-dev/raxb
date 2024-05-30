@@ -16,3 +16,8 @@ keywords.workspace = true
 
 [dependencies]
 raxb-derive.workspace = true
+thiserror.workspace = true
+quick-xml.workspace = true
+
+[dev-dependencies]
+anyhow.workspace = true
