@@ -43,6 +43,8 @@ pub enum XmlDeserializeError {
     Utf8String(#[from] FromUtf8Error),
     #[error(transparent)]
     Bool(#[from] ParseBoolError),
+    #[error("empty element, try to add #[raxb(default)] attribute")]
+    EmptyNode,
     #[error("missing root element name, try to implement 'fn root() -> XmlTag {{ b\"my-root-element-name\" }}'")]
     MissingRoot,
     #[error("missing element '{0}'")]

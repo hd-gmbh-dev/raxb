@@ -8,6 +8,8 @@ pub const ROOT: Symbol = Symbol("root");
 pub const RAXB: Symbol = Symbol("raxb");
 pub const NAME: Symbol = Symbol("name");
 pub const TYPE: Symbol = Symbol("ty");
+pub const TNS: Symbol = Symbol("tns");
+pub const NS: Symbol = Symbol("ns");
 
 impl PartialEq<Symbol> for Ident {
     fn eq(&self, other: &Symbol) -> bool {

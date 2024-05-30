@@ -57,6 +57,7 @@ pub struct Container<'a> {
     pub enum_variants: Vec<EnumVariant<'a>>,
     pub original: &'a syn::DeriveInput,
     pub root: Option<syn::LitByteStr>,
+    pub tns: Option<(syn::LitByteStr, syn::LitByteStr)>,
 }
 
 impl<'a> Container<'a> {
@@ -72,6 +73,7 @@ impl<'a> Container<'a> {
 
     pub fn from_ast(item: &'a syn::DeriveInput, _derive: Derive) -> Container<'a> {
         let mut root = Option::<syn::LitByteStr>::None;
+        let mut tns = Option::<(syn::LitByteStr, syn::LitByteStr)>::None;
         for meta_item in item
             .attrs
             .iter()
@@ -82,6 +84,18 @@ impl<'a> Container<'a> {
                 NameValue(m) if m.path == ROOT => {
                     let s = get_lit_byte_str(&m.value).expect("parse root failed");
                     root = Some(s.clone());
+                }
+                Meta::List(l) if l.path == TNS => {
+                    let strs = l
+                        .parse_args_with(Punctuated::<syn::LitByteStr, Comma>::parse_terminated)
+                        .unwrap();
+                    let mut iter = strs.iter();
+                    let first = iter.next().expect("tns should have 2 arguments");
+                    let second = iter.next().expect("tns should have 2 arguments");
+                    if iter.next().is_some() {
+                        panic!("tns should have 2 arguments")
+                    }
+                    tns = Some((first.clone(), second.clone()));
                 }
                 _ => panic!("unexpected"),
             }
@@ -98,6 +112,7 @@ impl<'a> Container<'a> {
                     enum_variants: vec![],
                     original: item,
                     root,
+                    tns,
                 }
             }
             syn::Data::Enum(e) => {
@@ -111,6 +126,7 @@ impl<'a> Container<'a> {
                     enum_variants: variants,
                     original: item,
                     root,
+                    tns,
                 }
             }
             syn::Data::Union(_) => panic!("Only support struct and enum type, union is found"),
@@ -157,11 +173,13 @@ pub struct StructField<'a> {
     pub name: Option<syn::LitByteStr>,
     pub original: &'a syn::Field,
     pub generic: Generic<'a>,
+    pub ns: Option<syn::LitByteStr>,
 }
 
 impl<'a> StructField<'a> {
     pub fn from_ast(f: &'a syn::Field) -> Option<Self> {
         let mut name = Option::<syn::LitByteStr>::None;
+        let mut ns = Option::<syn::LitByteStr>::None;
         let mut ty = Option::<EleType>::None;
         let generic = get_generics(&f.ty);
         for meta_item in f.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
@@ -169,6 +187,11 @@ impl<'a> StructField<'a> {
                 NameValue(m) if m.path == NAME => {
                     if let Ok(s) = get_lit_byte_str(&m.value) {
                         name = Some(s.clone());
+                    }
+                }
+                NameValue(m) if m.path == NS => {
+                    if let Ok(s) = get_lit_byte_str(&m.value) {
+                        ns = Some(s.clone());
                     }
                 }
                 NameValue(m) if m.path == TYPE => {
@@ -195,6 +218,7 @@ impl<'a> StructField<'a> {
                 name,
                 original: f,
                 generic,
+                ns,
             })
         } else if f.ident.is_none() {
             Some(StructField {
@@ -202,6 +226,7 @@ impl<'a> StructField<'a> {
                 name,
                 original: f,
                 generic,
+                ns,
             })
         } else {
             None
@@ -209,16 +234,7 @@ impl<'a> StructField<'a> {
     }
 
     pub fn is_required(&self) -> bool {
-        if matches!(self.ty, EleType::Untag) {
-            return match self.generic {
-                Generic::Vec(_) => false,
-                Generic::Opt(_) => false,
-                Generic::None => true,
-            };
-        }
-        // self.default.is_none()
-        /*    && */
-        matches!(self.generic, Generic::None) && !matches!(self.ty, EleType::SelfClosedChild)
+        matches!(self.generic, Generic::None)
     }
 }
 

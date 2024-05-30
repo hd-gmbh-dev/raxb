@@ -56,18 +56,18 @@ pub fn create_assignments(f: &StructField) -> proc_macro2::TokenStream {
         let mut buf = Vec::<u8>::new();
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Text(ev)) => {
+                (_, Event::Text(ev)) => {
                     #assing_value
                 },
-                (ResolveResult::Unbound, Event::Start(ev)) => {
+                (_, Event::Start(ev)) => {
                     let mut buffer: Vec<u8> = Vec::<u8>::new();
                     reader.read_to_end_into(ev.name(), &mut buffer)?;
                 },
-                (ResolveResult::Unbound, Event::Empty(ev)) => {},
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                (_, Event::Empty(ev)) => {},
+                (_, Event::End(e)) if e.local_name().as_ref() == tag => {
                     break;
                 },
-                (ResolveResult::Unbound, Event::Eof) => {
+                (_, Event::Eof) => {
                     break;
                 },
                 _ => {},

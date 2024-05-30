@@ -38,7 +38,7 @@ pub struct D {
 #[derive(Debug, XmlDeserialize)]
 #[raxb(root = b"a")]
 pub struct A {
-    #[raxb(name = b"b", ty = "child")]
+    #[raxb(name = b"b", ty = "sfc")]
     pub b: bool,
     #[raxb(name = b"c", ty = "child")]
     pub c: String,

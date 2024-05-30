@@ -28,6 +28,7 @@ fn create_return_value(fields: &[StructField]) -> proc_macro2::TokenStream {
 
 pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
     let root_impl = create_root_impl(&container);
+    let tns_impl = create_tns_impl(&container);
     let field_assignments = if let Some(f) = container
         .struct_fields
         .iter()
@@ -59,6 +60,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     attributes: _raxb::quick_xml::events::attributes::Attributes,
                     is_empty: bool,
                 ) -> _raxb::de::XmlDeserializeResult<Self> {
+                    let target_ns = Self::target_ns().unwrap_or(target_ns);
 
                     #fields_init
                     #attr_assignments
@@ -69,6 +71,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     })
                 }
                 #root_impl
+                #tns_impl
             }
         };
     }
@@ -79,6 +82,18 @@ fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
         quote! {
             fn root() -> Option<_raxb::de::XmlTag> {
                 Some(#root)
+            }
+        }
+    } else {
+        quote! {}
+    }
+}
+
+fn create_tns_impl(container: &Container) -> proc_macro2::TokenStream {
+    if let Some((_, ns)) = container.tns.as_ref() {
+        quote! {
+            fn target_ns() -> Option<_raxb::de::XmlTargetNs> {
+                Some(#ns)
             }
         }
     } else {
