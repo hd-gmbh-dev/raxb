@@ -56,3 +56,31 @@ fn test_deserialize_ns_with_derive_macro() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+#[derive(Debug, XmlDeserialize)]
+pub struct XsdImportOrInclude {
+    #[raxb(name = b"schemaLocation", ty = "attr")]
+    pub schema_location: String,
+}
+
+#[derive(Debug, XmlDeserialize)]
+#[raxb(root = b"schema")]
+#[raxb(tns(b"xs", b"http://www.w3.org/2001/XMLSchema"))]
+pub struct Xsd {
+    #[raxb(ns = b"xs", name = b"include", ty = "sfc")]
+    pub includes: Vec<XsdImportOrInclude>,
+    #[raxb(ns = b"xs", name = b"import", ty = "sfc")]
+    pub imports: Vec<XsdImportOrInclude>,
+}
+
+#[test]
+fn test_deserialize_ns_with_derive_macro_with_decl() -> anyhow::Result<()> {
+    let xml = r#"<?xml version="1.0" encoding="utf-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="https://local.dev/example" xmlns:example="https://local.dev/example" elementFormDefault="qualified">
+    <xs:import schemaLocation="./example2.xsd" namespace="https://local.dev/example2" />
+    <xs:include  schemaLocation="./example1.xsd" />
+</xs:schema>"#;
+    let xsd: Xsd = raxb::de::from_str(xml)?;
+    eprintln!("{xsd:#?}");
+    Ok(())
+}

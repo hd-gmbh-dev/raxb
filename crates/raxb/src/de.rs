@@ -53,11 +53,11 @@ pub trait XmlDeserialize {
         R: BufRead;
 }
 
-pub fn from_str<T>(s: &str) -> XmlDeserializeResult<T>
+fn deserialize_with_reader<T, R>(mut rdr: NsReader<R>) -> XmlDeserializeResult<T>
 where
     T: XmlDeserialize,
+    R: BufRead,
 {
-    let mut rdr = quick_xml::NsReader::from_str(s);
     let mut buf = Vec::<u8>::new();
     let mut result = Option::<T>::None;
     let root = T::root().ok_or(XmlDeserializeError::MissingRoot)?;
@@ -125,4 +125,19 @@ where
         }
     }
     result.ok_or(XmlDeserializeError::MissingElement(root.into()))
+}
+
+pub fn from_str<T>(s: &str) -> XmlDeserializeResult<T>
+where
+    T: XmlDeserialize,
+{
+    deserialize_with_reader(quick_xml::NsReader::from_str(s))
+}
+
+pub fn from_reader<R, T>(s: R) -> XmlDeserializeResult<T>
+where
+    R: BufRead,
+    T: XmlDeserialize,
+{
+    deserialize_with_reader(quick_xml::NsReader::<R>::from_reader(s))
 }

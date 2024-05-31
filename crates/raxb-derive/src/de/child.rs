@@ -75,17 +75,9 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         }
     }
 
-    let has_unqualified_children = !unqualified_child_branches.is_empty();
-    let has_unqualified_sfcs = !unqualified_child_branches.is_empty();
-
     let has_qualified_children = !qualified_child_branches.is_empty();
-    let has_qualified_sfcs = !qualified_child_branches.is_empty();
-
-    let unqualified_child_branches = unqualified_child_branches.into_iter();
-    let unqualified_sfc_branches = unqualified_sfc_branches.into_iter();
-    let qualified_child_branches = qualified_child_branches.into_iter();
-    let qualified_sfc_branches = qualified_sfc_branches.into_iter();
     let qualified_child_branch = if has_qualified_children {
+        let qualified_child_branches = qualified_child_branches.into_iter();
         quote! {
             (ResolveResult::Bound(ns), Event::Start(ev)) => {
                 match ev.local_name().as_ref() {
@@ -100,7 +92,10 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     } else {
         quote! {}
     };
-    let qualified_sfc_branch = if has_qualified_children {
+
+    let has_qualified_sfcs = !qualified_sfc_branches.is_empty();
+    let qualified_sfc_branch = if has_qualified_sfcs {
+        let qualified_sfc_branches = qualified_sfc_branches.into_iter();
         quote! {
             (ResolveResult::Bound(ns), Event::Empty(ev)) => {
                 match ev.local_name().as_ref() {
@@ -113,7 +108,9 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         quote! {}
     };
 
+    let has_unqualified_children = !unqualified_child_branches.is_empty();
     let unqualified_child_branch = if has_unqualified_children {
+        let unqualified_child_branches = unqualified_child_branches.into_iter();
         quote! {
             (ResolveResult::Unbound, Event::Start(ev)) => {
                 match ev.local_name().as_ref() {
@@ -129,7 +126,9 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         quote! {}
     };
 
-    let unqualified_sfc_branch = if has_unqualified_children {
+    let has_unqualified_sfcs = !unqualified_sfc_branches.is_empty();
+    let unqualified_sfc_branch = if has_unqualified_sfcs {
+        let unqualified_sfc_branches = unqualified_sfc_branches.into_iter();
         quote! {
             (ResolveResult::Unbound, Event::Empty(ev)) => {
                 match ev.local_name().as_ref() {
