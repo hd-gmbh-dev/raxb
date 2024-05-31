@@ -4,7 +4,7 @@ members = ["crates/*"]
 
 [workspace.package]
 edition = "2021"
-version = "0.2.0"
+version = "0.3.0"
 description = """
 The Rust Architecture for XML Binding
 """
@@ -16,10 +16,10 @@ categories = []
 keywords = []
 
 [workspace.dependencies]
-raxb = { version = "0.2.0", path = "crates/raxb" }
-raxb-derive = { version = "0.2.0", path = "crates/raxb-derive" }
-raxb-validate = { version = "0.2.0", path = "crates/raxb-validate" }
-raxb-xmlschema = { version = "0.2.0", path = "crates/raxb-xmlschema" }
+raxb = { version = "0.3.0", path = "crates/raxb" }
+raxb-derive = { version = "0.3.0", path = "crates/raxb-derive" }
+raxb-validate = { version = "0.3.0", path = "crates/raxb-validate" }
+raxb-xmlschema = { version = "0.3.0", path = "crates/raxb-xmlschema" }
 
 anyhow = "1"
 thiserror = "1"
