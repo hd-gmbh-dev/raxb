@@ -1,5 +1,6 @@
 pub type XmlTag = &'static [u8];
 pub type XmlTargetNs = &'static [u8];
+pub type XmlTargetNsPrefix = &'static [u8];
 
 #[derive(Clone)]
 pub struct S(pub XmlTag);

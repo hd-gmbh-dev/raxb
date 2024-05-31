@@ -1,277 +1,32 @@
-use std::str::FromStr;
-
-use crate::container::{BuiltInType, Container, EleType, Generic};
 use quote::quote;
+
+use crate::container::Container;
+
+use super::{child::create_child_blocks, text::create_text_block};
 
 fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
     if let Some(root) = container.root.as_ref() {
-        quote! {
-            fn root() -> Option<_raxb::ty::XmlTag> {
-                Some(#root)
+        if let Some((prefix, _)) = container.tns.as_ref() {
+            let prefix_buf = prefix.value();
+            let prefix = std::str::from_utf8(&prefix_buf).unwrap();
+            let root_buf = root.value();
+            let root = std::str::from_utf8(&root_buf).unwrap();
+            let tag: syn::LitByteStr = syn::parse_str(&format!("b\"{prefix}:{root}\"")).unwrap();
+            quote! {
+                fn root() -> Option<_raxb::ty::XmlTag> {
+                    Some(#tag)
+                }
+            }
+        } else {
+            quote! {
+                fn root() -> Option<_raxb::ty::XmlTag> {
+                    Some(#root)
+                }
             }
         }
     } else {
         quote! {}
     }
-}
-
-fn get_built_in_type(ty: &syn::Type) -> BuiltInType {
-    if let syn::Type::Path(p) = ty {
-        if let Some(ty_ident) = p.path.get_ident() {
-            return BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
-        }
-    }
-    BuiltInType::Unknown
-}
-
-fn create_attribute_value_impl(ty: &syn::Type) -> proc_macro2::TokenStream {
-    let built_in_ty = get_built_in_type(ty);
-    if built_in_ty.is_string() {
-        return quote! {
-            _raxb::quick_xml::escape::escape(value).as_ref()
-        };
-    }
-    quote! {
-        _raxb::quick_xml::escape::escape(&value.to_string()).as_ref()
-    }
-}
-
-fn create_attribute_blocks(container: &Container) -> Vec<proc_macro2::TokenStream> {
-    let mut blocks: Vec<proc_macro2::TokenStream> = Vec::new();
-    for f in container
-        .struct_fields
-        .iter()
-        .filter(|sf| sf.name.is_some() && matches!(sf.ty, EleType::Attr))
-    {
-        let name = f.name.as_ref().unwrap();
-        let ident = f.original.ident.as_ref().unwrap();
-        let v = name.value();
-        let name = std::str::from_utf8(&v).unwrap();
-        let ty = &f.original.ty;
-        match f.generic {
-            Generic::Vec(_) => {
-                eprintln!("WARNING: Vec<T> cannot be used for attributes, use Option<T> instead");
-            }
-            Generic::Opt(ty) => {
-                let attribute_value_impl = create_attribute_value_impl(ty);
-                blocks.push(quote! {
-                    if let Some(value) = self.#ident.as_ref() {
-                        el_writer = el_writer.with_attribute((#name, {
-                            #attribute_value_impl
-                        }));
-                    }
-                })
-            }
-            Generic::None => {
-                let attribute_value_impl = create_attribute_value_impl(ty);
-                blocks.push(quote! {
-                    el_writer = el_writer.with_attribute((#name, {
-                        let value = &self.#ident;
-                        #attribute_value_impl
-                    }));
-                })
-            }
-        }
-    }
-    blocks
-}
-
-fn create_text_block(container: &Container) -> Option<proc_macro2::TokenStream> {
-    if let Some(f) = container
-        .struct_fields
-        .iter()
-        .find(|sf| matches!(sf.ty, EleType::Text))
-    {
-        let ident = f.original.ident.as_ref().unwrap();
-        let ty = &f.original.ty;
-        match f.generic {
-            Generic::Vec(_) => {
-                return Some(quote! {
-                    let value = self.#ident.iter().map(|v| v.to_string()).join(",");
-                    el_writer
-                        .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value)))?;
-                });
-            }
-            Generic::Opt(ty) => {
-                let built_in_type = get_built_in_type(ty);
-                if built_in_type.is_string() {
-                    return Some(quote! {
-                        if let Some(value) = self.#ident.as_ref() {
-                            el_writer
-                                .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value)))?;
-                        }
-                    });
-                } else {
-                    return Some(quote! {
-                        if let Some(value) = self.#ident.as_ref() {
-                            el_writer
-                                .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value.to_string())))?;
-                        }
-                    });
-                }
-            }
-            Generic::None => {
-                let built_in_type = get_built_in_type(ty);
-                if built_in_type.is_string() {
-                    return Some(quote! {
-                        el_writer
-                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident)))?;
-                    });
-                } else {
-                    return Some(quote! {
-                        el_writer
-                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident.to_string())))?;
-                    });
-                }
-            }
-        }
-    }
-    None
-}
-
-fn create_write_text_value(name: &str) -> proc_macro2::TokenStream {
-    quote! {
-        writer.create_element(#name)
-            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value)))?;
-    }
-}
-
-fn create_write_any_builtin_value(name: &str) -> proc_macro2::TokenStream {
-    quote! {
-        writer.create_element(#name)
-            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value.to_string())))?;
-    }
-}
-
-fn create_child_blocks(container: &Container) -> Vec<proc_macro2::TokenStream> {
-    let mut blocks: Vec<proc_macro2::TokenStream> = Vec::new();
-    for f in container.struct_fields.iter().filter(|sf| {
-        sf.name.is_some() && matches!(sf.ty, EleType::Child | EleType::SelfClosedChild)
-    }) {
-        let name = f.name.as_ref().unwrap();
-        let ident = f.original.ident.as_ref().unwrap();
-        let v = name.value();
-        let name = std::str::from_utf8(&v).unwrap();
-        let ty = &f.original.ty;
-        let is_sfc = matches!(f.ty, EleType::SelfClosedChild);
-        match f.generic {
-            Generic::Vec(ty) => {
-                let built_in_type = get_built_in_type(ty);
-                if built_in_type.is_string() {
-                    let write_value = create_write_text_value(name);
-                    blocks.push(quote! {
-                        for value in self.#ident.iter() {
-                            #write_value
-                        }
-                    });
-                } else if built_in_type.is_bool() {
-                    if is_sfc {
-                        blocks.push(quote! {
-                            for value in self.#ident.iter() {
-                                if value {
-                                    writer.create_element(#name)
-                                        .write_empty()?;
-                                }
-                            }
-                        });
-                    } else {
-                        let write_value = create_write_any_builtin_value(name);
-                        blocks.push(quote! {
-                            for value in self.#ident.iter() {
-                                #write_value
-                            }
-                        });
-                    }
-                } else if built_in_type.is_number() {
-                    let write_value = create_write_any_builtin_value(name);
-                    blocks.push(quote! {
-                        for value in self.#ident.iter() {
-                            #write_value
-                        }
-                    });
-                } else if built_in_type.is_unknown() {
-                    blocks.push(quote! {
-                        for value in self.#ident.iter() {
-                            value.xml_serialize(#name, writer)?;
-                        }
-                    });
-                }
-            }
-            Generic::Opt(ty) => {
-                let built_in_type = get_built_in_type(ty);
-                if built_in_type.is_string() {
-                    let write_value = create_write_text_value(name);
-                    blocks.push(quote! {
-                        if let Some(value) = self.#ident.as_ref() {
-                            #write_value
-                        }
-                    })
-                } else if built_in_type.is_bool() {
-                    if is_sfc {
-                        blocks.push(quote! {
-                            if self.#ident.unwrap_or(false) {
-                                writer.create_element(#name)
-                                    .write_empty()?;
-                            }
-                        });
-                    } else {
-                        let write_value = create_write_any_builtin_value(name);
-                        blocks.push(quote! {
-                            if let Some(value) = self.#ident.as_ref() {
-                                #write_value
-                            }
-                        });
-                    }
-                } else if built_in_type.is_number() {
-                    let write_value = create_write_any_builtin_value(name);
-                    blocks.push(quote! {
-                        if let Some(value) = self.#ident.as_ref() {
-                            #write_value
-                        }
-                    });
-                } else if built_in_type.is_unknown() {
-                    blocks.push(quote! {
-                        if let Some(value) = self.#ident.as_ref() {
-                            value.xml_serialize(#name, writer)?;
-                        }
-                    });
-                }
-            }
-            Generic::None => {
-                let built_in_type = get_built_in_type(ty);
-                if built_in_type.is_string() {
-                    blocks.push(quote! {
-                        writer.create_element(#name)
-                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident)))?;
-                    })
-                } else if built_in_type.is_bool() {
-                    if is_sfc {
-                        blocks.push(quote! {
-                            if self.#ident {
-                                writer.create_element(#name)
-                                    .write_empty()?;
-                            }
-                        });
-                    } else {
-                        blocks.push(quote! {
-                            writer.create_element(#name)
-                                .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident.to_string())))?;
-                        });
-                    }
-                } else if built_in_type.is_number() {
-                    blocks.push(quote! {
-                        writer.create_element(#name)
-                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident.to_string())))?;
-                    });
-                } else if built_in_type.is_unknown() {
-                    blocks.push(quote! {
-                        self.#ident.xml_serialize(#name, writer)?;
-                    });
-                }
-            }
-        }
-    }
-    blocks
 }
 
 fn create_root_element_impl(container: &Container) -> proc_macro2::TokenStream {
@@ -281,10 +36,9 @@ fn create_root_element_impl(container: &Container) -> proc_macro2::TokenStream {
     } else {
         Vec::default()
     };
-    let attribute_blocks = create_attribute_blocks(container);
+    let attribute_blocks = super::attrs::create_attribute_blocks(container);
     let has_attributes = !attribute_blocks.is_empty();
     let mut has_child_blocks = !child_blocks.is_empty();
-
     let children = if let Some(text_block) = text_block {
         has_child_blocks = true;
         text_block
@@ -302,16 +56,30 @@ fn create_root_element_impl(container: &Container) -> proc_macro2::TokenStream {
             el_writer.write_empty()?;
         }
     };
+    let create_el = if let Some((prefix, ns)) = container.tns.as_ref() {
+        let prefix_buf = prefix.value();
+        let prefix = std::str::from_utf8(&prefix_buf).unwrap();
+        let ns_buf = ns.value();
+        let ns = std::str::from_utf8(&ns_buf).unwrap();
+        let key = if !prefix.is_empty() {
+            format!("xmlns:{prefix}")
+        } else {
+            "xmlns".to_string()
+        };
+        quote! { writer.create_element(tag).with_attribute((#key, #ns)) }
+    } else {
+        quote! { writer.create_element(tag) }
+    };
     if has_attributes || has_child_blocks {
         let attribute_blocks = attribute_blocks.into_iter();
         quote! {
-            let mut el_writer = writer.create_element(tag);
+            let mut el_writer = #create_el;
             #(#attribute_blocks)*
             #children
         }
     } else {
         quote! {
-            writer.create_element(tag).write_empty()?;
+            #create_el.write_empty()?;
         }
     }
 }

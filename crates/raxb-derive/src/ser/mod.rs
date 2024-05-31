@@ -3,6 +3,9 @@ use syn::DeriveInput;
 
 use crate::container::{self, Container};
 
+mod attrs;
+mod child;
+mod text;
 mod ty_struct;
 
 pub fn xml_serialize_impl_block(input: DeriveInput) -> proc_macro2::TokenStream {

@@ -7,7 +7,6 @@ mod text;
 mod ty_enum;
 mod ty_simple;
 mod ty_struct;
-mod utils;
 
 pub fn xml_deserialize_impl_block(input: DeriveInput) -> proc_macro2::TokenStream {
     let container = Container::from_ast(&input, container::Derive::Deserialize);

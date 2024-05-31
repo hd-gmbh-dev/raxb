@@ -6,7 +6,7 @@ use crate::container::{BuiltInType, FieldsSummary, Generic, StructField};
 
 pub fn init(fields: &FieldsSummary) -> proc_macro2::TokenStream {
     if let Some(f) = fields.text.as_ref() {
-        return super::utils::create_ident(f);
+        return crate::utils::create_ident(f);
     }
     quote! {}
 }

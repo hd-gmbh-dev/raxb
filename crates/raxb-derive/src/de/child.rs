@@ -5,11 +5,11 @@ use quote::quote;
 use crate::container::{BuiltInType, Container, EleType, FieldsSummary, Generic};
 
 pub fn init(fields: &FieldsSummary) -> proc_macro2::TokenStream {
-    let v = fields.children.iter().map(super::utils::create_ident);
+    let v = fields.children.iter().map(crate::utils::create_ident);
     let s = fields
         .self_closed_children
         .iter()
-        .map(super::utils::create_ident);
+        .map(crate::utils::create_ident);
     quote! {
         #(#v)*
         #(#s)*
