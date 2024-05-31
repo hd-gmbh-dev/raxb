@@ -26,7 +26,7 @@ pub struct Example {
 }
 
 #[test]
-fn test_soap_envelope_generic() -> anyhow::Result<()> {
+fn test_deserialize_ns_with_derive_macro() -> anyhow::Result<()> {
     let xml = r#"<SOAP-ENV:Envelope xmlns:SOAP-ENV="https://schemas.xmlsoap.org/soap/envelope/">
     <SOAP-ENV:Header/>
     <SOAP-ENV:Body xmlns:xsd="http://www.w3.org/2001/XMLSchema">

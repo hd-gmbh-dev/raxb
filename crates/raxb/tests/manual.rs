@@ -1,11 +1,17 @@
 #![allow(clippy::single_match)]
 
 use quick_xml::{
-    events::{attributes::Attributes, Event},
+    escape::escape,
+    events::{attributes::Attributes, BytesText, Event},
     name::ResolveResult,
     NsReader,
 };
-use raxb::de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult, XmlTag, XmlTargetNs, S};
+
+use raxb::{
+    de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult},
+    ser::{XmlSerialize, XmlSerializeError},
+    ty::{XmlTag, XmlTargetNs, S},
+};
 use std::io::BufRead;
 
 #[derive(Debug)]
@@ -68,6 +74,29 @@ impl XmlDeserialize for F {
             h,
             j: j.ok_or(XmlDeserializeError::MissingElement(S(b"j")))?,
         })
+    }
+}
+
+impl XmlSerialize for F {
+    fn xml_serialize<W: std::io::Write>(
+        &self,
+        tag: &str,
+        writer: &mut quick_xml::Writer<W>,
+    ) -> raxb::ser::XmlSerializeResult<()> {
+        writer
+            .create_element(tag)
+            .write_inner_content::<_, XmlSerializeError>(|writer| {
+                if let Some(v) = self.h.as_ref() {
+                    writer
+                        .create_element("h")
+                        .write_text_content(BytesText::from_escaped(escape(v)))?;
+                }
+                writer
+                    .create_element("j")
+                    .write_text_content(BytesText::from_escaped(escape(&self.j)))?;
+                Ok(())
+            })?;
+        Ok(())
     }
 }
 
@@ -149,8 +178,33 @@ impl XmlDeserialize for D {
     }
 }
 
+impl XmlSerialize for D {
+    fn xml_serialize<W: std::io::Write>(
+        &self,
+        tag: &str,
+        writer: &mut quick_xml::Writer<W>,
+    ) -> raxb::ser::XmlSerializeResult<()> {
+        writer
+            .create_element(tag)
+            .with_attribute(("name", self.name.as_str()))
+            .write_inner_content::<_, XmlSerializeError>(|writer| {
+                for v in self.e.iter() {
+                    writer
+                        .create_element("e")
+                        .write_text_content(BytesText::from_escaped(escape(&v.to_string())))?;
+                }
+                for v in self.f.iter() {
+                    v.xml_serialize("f", writer)?;
+                }
+                Ok(())
+            })?;
+        Ok(())
+    }
+}
+
 #[derive(Debug)]
 pub struct A {
+    pub id: String,
     pub b: bool,
     pub c: String,
     pub d: D,
@@ -165,7 +219,7 @@ impl XmlDeserialize for A {
         reader: &mut NsReader<R>,
         target_ns: XmlTag,
         tag: XmlTargetNs,
-        _attributes: Attributes,
+        attributes: Attributes,
         _is_empty: bool,
     ) -> XmlDeserializeResult<Self>
     where
@@ -173,6 +227,16 @@ impl XmlDeserialize for A {
         R: BufRead,
     {
         let mut buf = Vec::<u8>::new();
+
+        let mut id = Option::<String>::None;
+        for attr in attributes.flatten() {
+            match attr.key.local_name().as_ref() {
+                b"id" => {
+                    id = Some(String::from_utf8(attr.value.to_vec())?);
+                }
+                _ => {}
+            }
+        }
 
         let mut b = Option::<bool>::None;
         let mut c = Option::<String>::None;
@@ -219,6 +283,7 @@ impl XmlDeserialize for A {
             }
         }
         Ok(Self {
+            id: id.ok_or(XmlDeserializeError::MissingAttribute(S(b"id")))?,
             b: b.ok_or(XmlDeserializeError::MissingElement(S(b"b")))?,
             c: c.ok_or(XmlDeserializeError::MissingElement(S(b"c")))?,
             d: d.ok_or(XmlDeserializeError::MissingElement(S(b"d")))?,
@@ -226,9 +291,66 @@ impl XmlDeserialize for A {
     }
 }
 
+impl XmlSerialize for A {
+    fn root() -> Option<XmlTag> {
+        Some(b"a")
+    }
+
+    fn xml_serialize<W: std::io::Write>(
+        &self,
+        tag: &str,
+        writer: &mut quick_xml::Writer<W>,
+    ) -> raxb::ser::XmlSerializeResult<()> {
+        writer
+            .create_element(tag)
+            .with_attribute(("id", self.id.as_str()))
+            .write_inner_content::<_, XmlSerializeError>(|writer| {
+                if self.b {
+                    writer.create_element("b").write_empty()?;
+                }
+                writer
+                    .create_element("c")
+                    .write_text_content(BytesText::new(&self.c))?;
+                self.d.xml_serialize("d", writer)?;
+                Ok(())
+            })?;
+        Ok(())
+    }
+}
+
 #[test]
-fn test_simple_xml() -> anyhow::Result<()> {
-    let xml = r#"<a>
+fn test_serialize_manual() -> anyhow::Result<()> {
+    let a = A {
+        id: "root".to_string(),
+        b: true,
+        c: "foo".to_string(),
+        d: D {
+            name: "foobar".to_string(),
+            e: vec![1, 2, 3],
+            f: vec![
+                F {
+                    h: Some("bar1".to_string()),
+                    j: "baz2".to_string(),
+                },
+                F {
+                    h: None,
+                    j: "baz".to_string(),
+                },
+            ],
+        },
+    };
+
+    let xml = raxb::ser::to_string(&a)?;
+    assert_eq!(
+        r#"<a id="root"><b/><c>foo</c><d name="foobar"><e>1</e><e>2</e><e>3</e><f><h>bar1</h><j>baz2</j></f><f><j>baz</j></f></d></a>"#,
+        xml
+    );
+    Ok(())
+}
+
+#[test]
+fn test_deserialize_manual() -> anyhow::Result<()> {
+    let xml = r#"<a id="root">
         <b/>
         <c>foo</c>
         <d name="foobar">
@@ -245,6 +367,7 @@ fn test_simple_xml() -> anyhow::Result<()> {
         </d>
     </a>"#;
     let a = raxb::de::from_str::<A>(xml)?;
+    assert_eq!(a.id, "root");
     assert!(a.b);
     assert_eq!(a.c, "foo");
     assert_eq!(a.d.name, "foobar");
@@ -257,8 +380,8 @@ fn test_simple_xml() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_simple_skip_unknown_xml() -> anyhow::Result<()> {
-    let xml = r#"<a>
+fn test_deserialize_manual_skipping_unknown_fields() -> anyhow::Result<()> {
+    let xml = r#"<a id="root">
         <b/>
         <c>foo</c>
         <y>

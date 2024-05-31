@@ -1,6 +1,6 @@
-use raxb::XmlDeserialize;
+use raxb::{XmlDeserialize, XmlSerialize};
 
-#[derive(Debug, XmlDeserialize)]
+#[derive(Debug, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"k")]
 pub struct K {
     #[raxb(name = b"id", ty = "attr")]
@@ -11,7 +11,7 @@ pub struct K {
     pub content: String,
 }
 
-#[derive(Debug, XmlDeserialize)]
+#[derive(Debug, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"f")]
 pub struct F {
     #[raxb(name = b"h", ty = "child")]
@@ -20,7 +20,7 @@ pub struct F {
     pub j: String,
 }
 
-#[derive(Debug, XmlDeserialize)]
+#[derive(Debug, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"d")]
 pub struct D {
     #[raxb(name = b"name", ty = "attr")]
@@ -35,9 +35,11 @@ pub struct D {
     pub d: Vec<D>,
 }
 
-#[derive(Debug, XmlDeserialize)]
+#[derive(Debug, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"a")]
 pub struct A {
+    #[raxb(name = b"id", ty = "attr")]
+    pub id: String,
     #[raxb(name = b"b", ty = "sfc")]
     pub b: bool,
     #[raxb(name = b"c", ty = "child")]
@@ -47,8 +49,43 @@ pub struct A {
 }
 
 #[test]
-fn derive_test() -> anyhow::Result<()> {
-    let xml = r#"<a>
+fn test_serialize_derive() -> anyhow::Result<()> {
+    let a = A {
+        id: "root".to_string(),
+        b: true,
+        c: "foo".to_string(),
+        d: D {
+            name: "foobar".to_string(),
+            e: vec![1, 2, 3],
+            f: vec![
+                F {
+                    h: Some("bar1".to_string()),
+                    j: "baz2".to_string(),
+                },
+                F {
+                    h: None,
+                    j: "baz".to_string(),
+                },
+            ],
+            k: vec![K {
+                content: "k content 1".to_string(),
+                n: 32,
+                id: Some("one".to_string()),
+            }],
+            d: vec![],
+        },
+    };
+    let xml = raxb::ser::to_string(&a)?;
+    assert_eq!(
+        r#"<a id="root"><b/><c>foo</c><d name="foobar"><e>1</e><e>2</e><e>3</e><f><h>bar1</h><j>baz2</j></f><f><j>baz</j></f><k id="one" n="32">k content 1</k></d></a>"#,
+        xml
+    );
+    Ok(())
+}
+
+#[test]
+fn test_deserialize_with_derive_macro() -> anyhow::Result<()> {
+    let xml = r#"<a id="root">
         <b/>
         <c>foo</c>
         <d name="foobar">

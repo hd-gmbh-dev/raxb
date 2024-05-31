@@ -10,11 +10,11 @@ fn create_return_value(fields: &[StructField]) -> proc_macro2::TokenStream {
         if f.is_required() {
             if matches!(f.ty, EleType::Attr) {
                 quote! {
-                    #ident: #ident.ok_or(_raxb::de::XmlDeserializeError::MissingAttribute(_raxb::de::S(#field_name)))?,
+                    #ident: #ident.ok_or(_raxb::de::XmlDeserializeError::MissingAttribute(_raxb::ty::S(#field_name)))?,
                 }
             } else {
                 quote! {
-                    #ident: #ident.ok_or(_raxb::de::XmlDeserializeError::MissingElement(_raxb::de::S(#field_name)))?,
+                    #ident: #ident.ok_or(_raxb::de::XmlDeserializeError::MissingElement(_raxb::ty::S(#field_name)))?,
                 }
             }
         } else {
@@ -55,8 +55,8 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             impl #impl_generics _raxb::de::XmlDeserialize for #ident #type_generics #where_clause {
                 fn xml_deserialize<R: std::io::BufRead>(
                     reader: &mut _raxb::quick_xml::NsReader<R>,
-                    target_ns: _raxb::de::XmlTag,
-                    tag: _raxb::de::XmlTargetNs,
+                    target_ns: _raxb::ty::XmlTag,
+                    tag: _raxb::ty::XmlTargetNs,
                     attributes: _raxb::quick_xml::events::attributes::Attributes,
                     is_empty: bool,
                 ) -> _raxb::de::XmlDeserializeResult<Self> {
@@ -80,7 +80,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
 fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
     if let Some(root) = container.root.as_ref() {
         quote! {
-            fn root() -> Option<_raxb::de::XmlTag> {
+            fn root() -> Option<_raxb::ty::XmlTag> {
                 Some(#root)
             }
         }
@@ -92,7 +92,7 @@ fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
 fn create_tns_impl(container: &Container) -> proc_macro2::TokenStream {
     if let Some((_, ns)) = container.tns.as_ref() {
         quote! {
-            fn target_ns() -> Option<_raxb::de::XmlTargetNs> {
+            fn target_ns() -> Option<_raxb::ty::XmlTargetNs> {
                 Some(#ns)
             }
         }
