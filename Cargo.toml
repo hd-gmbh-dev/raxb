@@ -17,12 +17,21 @@ keywords = []
 
 [workspace.dependencies]
 raxb = { version = "0.3.1", path = "crates/raxb" }
+raxb-libxml2-sys = { version = "0.3.1", path = "crates/raxb-libxml2-sys" }
 raxb-derive = { version = "0.3.1", path = "crates/raxb-derive" }
 raxb-validate = { version = "0.3.1", path = "crates/raxb-validate" }
 raxb-xmlschema = { version = "0.3.1", path = "crates/raxb-xmlschema" }
+raxb-xmlschema-build = { version = "0.3.1", path = "crates/raxb-xmlschema-build" }
 
 anyhow = "1"
+byteorder = "1.5"
 thiserror = "1"
+url = "2.5.0"
+uuid = { version = "1.8", features = ["v5"] }
+lz4_flex = { version = "0.11" }
 quick-xml = {version = "0.31", features = ["serialize", "encoding"]}
+reqwest = { version = "0.12.4", features = ["blocking"] }
+once_cell = "1.19.0"
+libc = "0.2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

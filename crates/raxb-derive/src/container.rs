@@ -52,6 +52,7 @@ impl BuiltInType {
     }
 }
 
+#[allow(dead_code)]
 pub struct Container<'a> {
     pub struct_fields: Vec<StructField<'a>>, // Struct fields
     pub enum_variants: Vec<EnumVariant<'a>>,
@@ -238,6 +239,7 @@ impl<'a> StructField<'a> {
     }
 }
 
+#[allow(dead_code)]
 pub struct EnumVariant<'a> {
     pub name: Option<syn::LitByteStr>,
     pub ident: &'a syn::Ident,

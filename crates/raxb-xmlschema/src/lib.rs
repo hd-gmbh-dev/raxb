@@ -12,11 +12,8 @@
     variant_size_differences
 )]
 */
-
-pub trait XmlSchema {}
-
-pub trait XmlElement {}
-
-pub trait XmlBackend {}
-
-pub trait XmlContent {}
+pub mod cnst;
+#[cfg(feature = "reader")]
+pub mod reader;
+#[cfg(feature = "writer")]
+pub mod writer;
