@@ -4,7 +4,7 @@
       "H & D GmbH Open Source <contact-oss@h-d-gmbh.de>"
     ],
     "type": "module",
-    "version": "0.3.2",
+    "version": "0.3.3",
     "files": [
       "raxb-validate-wasm.wasm",
       "raxb-validate-wasm.js",
