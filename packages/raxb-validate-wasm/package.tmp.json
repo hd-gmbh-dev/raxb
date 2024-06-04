@@ -1,9 +1,11 @@
 {
     "name": "@raxb/validate-wasm",
+    "description": "validate xml's against schema bundles built by `raxb-xmlschema-build`.",
     "collaborators": [
       "H & D GmbH Open Source <contact-oss@h-d-gmbh.de>"
     ],
     "type": "module",
+    "url": "https://github.com/hd-gmbh-dev/raxb",
     "version": "0.3.3",
     "files": [
       "raxb-validate-wasm.wasm",
@@ -15,5 +17,6 @@
     "sideEffects": [
       "./raxb-validate-wasm.js",
       "./snippets/*"
-    ]
+    ],
+    "keywords": ["xml", "xsd", "raxb", "emscripten", "wasm"]
   }
