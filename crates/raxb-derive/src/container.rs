@@ -54,7 +54,7 @@ impl BuiltInType {
 
 #[allow(dead_code)]
 pub struct Container<'a> {
-    pub struct_fields: Vec<StructField<'a>>, // Struct fields    
+    pub struct_fields: Vec<StructField<'a>>, // Struct fields
     pub enum_variants: Vec<EnumVariant<'a>>,
     pub original: &'a syn::DeriveInput,
     pub root: Option<syn::LitByteStr>,

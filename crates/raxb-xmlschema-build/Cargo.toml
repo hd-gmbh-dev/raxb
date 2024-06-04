@@ -1,5 +1,5 @@
 [package]
-name = "raxb-validate"
+name = "raxb-xmlschema-build"
 edition.workspace = true
 version.workspace = true
 description.workspace = true
@@ -15,12 +15,8 @@ keywords.workspace = true
 [features]
 
 [dependencies]
-raxb-libxml2-sys.workspace = true
+raxb.workspace = true
+raxb-derive.workspace = true
 raxb-xmlschema.workspace = true
-libc.workspace = true
-once_cell.workspace = true
-url.workspace = true
-uuid.workspace = true
 thiserror.workspace = true
 byteorder.workspace = true
-lz4_flex.workspace = true

@@ -23,7 +23,7 @@ fn main() {
     println!("cargo:rustc-link-lib=static=xml2");
     let libxml_build_absolute_path = std::fs::canonicalize(libxml.join("include/libxml2")).unwrap();
     let bindings = bindgen::Builder::default()
-        .clang_arg(&format!("-I{}", libxml_build_absolute_path.display()))
+        .clang_arg(format!("-I{}", libxml_build_absolute_path.display()))
         .header("bindings.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .allowlist_type("xmlCharEncoding_XML_CHAR_ENCODING_UTF8")

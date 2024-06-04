@@ -13,5 +13,17 @@ keywords.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+default = [
+    "reader",
+    "writer",
+]
+reader = []
+writer = ["reqwest"]
 
 [dependencies]
+reqwest = { workspace = true, optional = true }
+url.workspace = true
+uuid.workspace = true
+thiserror.workspace = true
+byteorder.workspace = true
+lz4_flex.workspace = true
