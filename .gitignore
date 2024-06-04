@@ -1,3 +1,6 @@
 target
 Cargo.lock
 .idea
+.vscode
+crates/raxb-libxml2-sys/third_party/libxml2-build
+packages/raxb-validate-wasm/dist

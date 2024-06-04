@@ -17,6 +17,7 @@ keywords = []
 
 [workspace.dependencies]
 raxb = { version = "0.3.1", path = "crates/raxb" }
+raxb-libxml2-sys = { version = "0.3.1", path = "crates/raxb-libxml2-sys" }
 raxb-derive = { version = "0.3.1", path = "crates/raxb-derive" }
 raxb-validate = { version = "0.3.1", path = "crates/raxb-validate" }
 raxb-xmlschema = { version = "0.3.1", path = "crates/raxb-xmlschema" }

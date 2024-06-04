@@ -1,0 +1,19 @@
+{
+    "name": "raxb-validate-wasm",
+    "collaborators": [
+      "Jürgen Seitz <juergen.seitz@h-d-gmbh.de>"
+    ],
+    "type": "module",
+    "version": "0.3.1",
+    "files": [
+      "raxb-validate-wasm.wasm",
+      "raxb-validate-wasm.js",
+      "raxb-validate-wasm.d.ts"
+    ],
+    "module": "raxb-validate-wasm.js",
+    "types": "raxb-validate-wasm.d.ts",
+    "sideEffects": [
+      "./raxb-validate-wasm.js",
+      "./snippets/*"
+    ]
+  }
