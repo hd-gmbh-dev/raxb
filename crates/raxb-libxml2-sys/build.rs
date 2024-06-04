@@ -21,21 +21,10 @@ fn main() {
         libxml.join("lib").display()
     );
     println!("cargo:rustc-link-lib=static=xml2");
-    // let libxml_absolute_path = std::fs::canonicalize(Path::new("./third_party/libxml2/include")).unwrap();
     let libxml_build_absolute_path = std::fs::canonicalize(libxml.join("include/libxml2")).unwrap();
-    // eprintln!("LIBXML PATH: {:?}", libxml_absolute_path.display());
-    eprintln!("LIBXML BUILD PATH: {:?}", libxml_build_absolute_path.display());
     let bindings = bindgen::Builder::default()
-        // .rust_target(bindgen::RustTarget::Nightly)
-        // .detect_include_paths(false)
-        // .clang_arg(&format!("-I{}", libxml_absolute_path.display()))
         .clang_arg(&format!("-I{}", libxml_build_absolute_path.display()))
-        // .clang_args(["-x", "c", "-std=c11"])
-        // The input header we would like to generate
-        // bindings for.
         .header("bindings.h")
-        // Tell cargo to invalidate the built crate whenever any of the
-        // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .allowlist_type("xmlCharEncoding_XML_CHAR_ENCODING_UTF8")
         .allowlist_function("xmlInitParser")
@@ -52,9 +41,7 @@ fn main() {
         .allowlist_var("xmlSchemaPtr")
         .allowlist_var("xmlSchemaValidCtxtPtr")
         .allowlist_var("xmlSAXHandler")
-        // Finish the builder and generate the bindings.
         .generate()
-        // Unwrap the Result and panic on failure.
         .expect("Unable to generate bindings");
     let out_path = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     bindings
