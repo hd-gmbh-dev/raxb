@@ -21,13 +21,14 @@ fn main() {
         libxml.join("lib").display()
     );
     println!("cargo:rustc-link-lib=static=xml2");
-    let libxml_absolute_path = std::fs::canonicalize(Path::new("./third_party/libxml2/include")).unwrap();
-    let libxml_build_absolute_path = std::fs::canonicalize(libxml.join("include")).unwrap();
-    eprintln!("LIBXML PATH: {:?}", libxml_absolute_path.display());
+    // let libxml_absolute_path = std::fs::canonicalize(Path::new("./third_party/libxml2/include")).unwrap();
+    let libxml_build_absolute_path = std::fs::canonicalize(libxml.join("include/libxml2")).unwrap();
+    // eprintln!("LIBXML PATH: {:?}", libxml_absolute_path.display());
+    eprintln!("LIBXML BUILD PATH: {:?}", libxml_build_absolute_path.display());
     let bindings = bindgen::Builder::default()
         // .rust_target(bindgen::RustTarget::Nightly)
         // .detect_include_paths(false)
-        .clang_arg(&format!("-I{}", libxml_absolute_path.display()))
+        // .clang_arg(&format!("-I{}", libxml_absolute_path.display()))
         .clang_arg(&format!("-I{}", libxml_build_absolute_path.display()))
         // .clang_args(["-x", "c", "-std=c11"])
         // The input header we would like to generate
