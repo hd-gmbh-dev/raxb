@@ -18,5 +18,13 @@
       "./raxb-validate-wasm.js",
       "./snippets/*"
     ],
+    "author": {
+      "name": "H & D GmbH Open Source",
+      "email": "contact-oss@h-d-gmbh.de"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/hd-gmbh-dev/raxb.git"
+    },
     "keywords": ["xml", "xsd", "raxb", "emscripten", "wasm"]
   }
