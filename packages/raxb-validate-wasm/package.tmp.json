@@ -1,7 +1,7 @@
 {
-    "name": "raxb-validate-wasm",
+    "name": "@raxb/validate-wasm",
     "collaborators": [
-      "Jürgen Seitz <juergen.seitz@h-d-gmbh.de>"
+      "H & D GmbH Open Source <contact-oss@h-d-gmbh.de>"
     ],
     "type": "module",
     "version": "0.3.1",
