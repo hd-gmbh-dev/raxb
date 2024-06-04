@@ -26,14 +26,14 @@ jobs:
       run: |
         cmake -version
         emcc -v
-    # - name: Check
-    #   run: |
-    #     rustup component add clippy
-    #     cargo clippy --no-deps
-    # - name: Build
-    #   run: cargo build --release
-    # - name: Test
-    #   run: cargo test
+    - name: Check
+      run: |
+        rustup component add clippy
+        cargo clippy --no-deps
+    - name: Build
+      run: cargo build --release
+    - name: Test
+      run: cargo test
     - name: raxb validate WASM LibXml2 directories
       working-directory: ./crates/raxb-libxml2-sys/third_party
       run: |
