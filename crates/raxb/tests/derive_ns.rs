@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use raxb::{XmlDeserialize, XmlSerialize};
 
 #[derive(Debug, XmlDeserialize, XmlSerialize)]

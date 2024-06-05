@@ -17,6 +17,7 @@ keywords.workspace = true
 [dependencies]
 raxb-libxml2-sys.workspace = true
 raxb-xmlschema.workspace = true
+raxb.workspace = true
 libc.workspace = true
 once_cell.workspace = true
 url.workspace = true
