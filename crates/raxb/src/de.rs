@@ -2,10 +2,10 @@ use quick_xml::events::attributes::Attributes;
 use quick_xml::events::Event;
 use quick_xml::name::ResolveResult;
 use quick_xml::NsReader;
-use std::io::BufRead;
 use std::num::ParseIntError;
 use std::str::ParseBoolError;
 use std::string::FromUtf8Error;
+use std::{io::BufRead, num::ParseFloatError};
 use thiserror::Error;
 
 use crate::ty::{XmlTag, XmlTargetNs, S};
@@ -18,6 +18,8 @@ pub enum XmlDeserializeError {
     Xml(#[from] quick_xml::Error),
     #[error(transparent)]
     Integer(#[from] ParseIntError),
+    #[error(transparent)]
+    Float(#[from] ParseFloatError),
     #[error(transparent)]
     Utf8String(#[from] FromUtf8Error),
     #[error(transparent)]

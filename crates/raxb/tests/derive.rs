@@ -1,5 +1,14 @@
 use raxb::{XmlDeserialize, XmlSerialize};
 
+#[derive(XmlDeserialize, XmlSerialize)]
+#[raxb(root = b"m")]
+pub struct M {
+    #[raxb(name = b"o", ty = "attr")]
+    pub o: f32,
+    #[raxb(name = b"u", ty = "child")]
+    pub u: Option<f32>,
+}
+
 #[derive(Debug, PartialEq, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"k")]
 pub struct K {
