@@ -41,3 +41,13 @@ where
     value.xml_serialize(name, &mut writer)?;
     Ok(String::from_utf8(writer.into_inner().into_inner())?)
 }
+
+pub fn to_string_pretty<T>(value: &T) -> XmlSerializeResult<String>
+where
+    T: XmlSerialize,
+{
+    let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
+    let name = std::str::from_utf8(T::root().ok_or(XmlSerializeError::MissingRoot)?)?;
+    value.xml_serialize(name, &mut writer)?;
+    Ok(String::from_utf8(writer.into_inner().into_inner())?)
+}
