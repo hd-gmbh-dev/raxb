@@ -53,6 +53,17 @@ pub struct XmlValidationErrorEntry {
     pub level: ErrorLevel,
 }
 
+impl std::fmt::Display for XmlValidationErrorEntry {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        writeln!(
+            f,
+            "{:?} at line {}: {}",
+            self.level, self.line, self.message
+        )?;
+        Ok(())
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct XmlValidationError {
     pub errors: Vec<XmlValidationErrorEntry>,
@@ -62,7 +73,7 @@ impl std::fmt::Display for XmlValidationError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         writeln!(f, "Xml Validation errors:")?;
         for err in self.errors.iter() {
-            write!(f, "- {:?} at line {}: {}", err.level, err.line, err.message)?;
+            write!(f, "- {err}")?;
         }
         Ok(())
     }
