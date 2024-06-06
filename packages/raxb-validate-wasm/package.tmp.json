@@ -6,7 +6,7 @@
     ],
     "type": "module",
     "url": "https://github.com/hd-gmbh-dev/raxb",
-    "version": "0.3.4",
+    "version": "0.3.6",
     "files": [
       "raxb-validate-wasm.wasm",
       "raxb-validate-wasm.js",
