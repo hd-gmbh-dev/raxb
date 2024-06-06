@@ -25,13 +25,13 @@ use syn::{parse_macro_input, DeriveInput};
 use de::xml_deserialize_impl_block;
 use ser::xml_serialize_impl_block;
 
-#[proc_macro_derive(XmlDeserialize, attributes(raxb))]
+#[proc_macro_derive(XmlDeserialize, attributes(raxb, xml))]
 pub fn derive_xml_deserialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     xml_deserialize_impl_block(input).into()
 }
 
-#[proc_macro_derive(XmlSerialize, attributes(raxb))]
+#[proc_macro_derive(XmlSerialize, attributes(raxb, xml))]
 pub fn derive_xml_serialize(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     xml_serialize_impl_block(input).into()
