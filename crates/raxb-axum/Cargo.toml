@@ -1,0 +1,22 @@
+[package]
+name = "raxb-axum"
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+categories.workspace = true
+keywords.workspace = true
+
+[features]
+
+[dependencies]
+axum = { version = "0.7", default-features = false }
+hyper = { version = "1.3", default-features = false }
+mime = { version = "0.3", default-features = false }
+
+async-trait.workspace = true
+raxb.workspace = true
+thiserror.workspace = true
