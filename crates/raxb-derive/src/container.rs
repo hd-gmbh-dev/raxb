@@ -25,7 +25,6 @@ pub enum BuiltInType {
     i64,
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Debug, Default, PartialEq, EnumString)]
 pub enum BuiltInConstType {
     #[default]
