@@ -25,6 +25,13 @@ pub enum BuiltInType {
     i64,
 }
 
+#[derive(Debug, Default, PartialEq, EnumString)]
+pub enum BuiltInConstType {
+    #[default]
+    Unknown,
+    ConstStr,
+}
+
 impl BuiltInType {
     pub fn is_unknown(&self) -> bool {
         matches!(self, Self::Unknown)
@@ -175,12 +182,14 @@ pub struct StructField<'a> {
     pub original: &'a syn::Field,
     pub generic: Generic<'a>,
     pub ns: Option<syn::LitByteStr>,
+    pub value: Option<syn::LitStr>,
 }
 
 impl<'a> StructField<'a> {
     pub fn from_ast(f: &'a syn::Field) -> Option<Self> {
         let mut name = Option::<syn::LitByteStr>::None;
         let mut ns = Option::<syn::LitByteStr>::None;
+        let mut value = Option::<syn::LitStr>::None;
         let mut ty = Option::<EleType>::None;
         let generic = get_generics(&f.ty);
         for meta_item in f.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
@@ -193,6 +202,11 @@ impl<'a> StructField<'a> {
                 NameValue(m) if m.path == NS => {
                     if let Ok(s) = get_lit_byte_str(&m.value) {
                         ns = Some(s.clone());
+                    }
+                }
+                NameValue(m) if m.path == VALUE => {
+                    if let Ok(s) = get_lit_str(&m.value) {
+                        value = Some(s.clone());
                     }
                 }
                 NameValue(m) if m.path == TYPE => {
@@ -220,6 +234,7 @@ impl<'a> StructField<'a> {
                 original: f,
                 generic,
                 ns,
+                value,
             })
         } else if f.ident.is_none() {
             Some(StructField {
@@ -228,6 +243,7 @@ impl<'a> StructField<'a> {
                 original: f,
                 generic,
                 ns,
+                value,
             })
         } else {
             None

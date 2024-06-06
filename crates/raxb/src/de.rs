@@ -17,6 +17,8 @@ pub enum XmlDeserializeError {
     #[error(transparent)]
     Xml(#[from] quick_xml::Error),
     #[error(transparent)]
+    XmlEscapeError(#[from] quick_xml::escape::EscapeError),
+    #[error(transparent)]
     Integer(#[from] ParseIntError),
     #[error(transparent)]
     Utf8String(#[from] FromUtf8Error),

@@ -44,13 +44,17 @@ pub fn create_assignments(fields: &FieldsSummary) -> proc_macro2::TokenStream {
                 if built_in_type.is_string() {
                     return Some(quote! {
                         #name => {
-                            #ident = Some(String::from_utf8(attr.value.to_vec())?);
+                            let value_str = String::from_utf8(attr.value.to_vec())?;
+                            let value = _raxb::quick_xml::escape::unescape(&value_str)?;
+                            #ident = Some(value.to_string());
                         }
                     });
                 } else {
                     return Some(quote! {
                         #name => {
-                            #ident = Some(String::from_utf8_lossy(&attr.value).parse()?);
+                            let value_str = String::from_utf8(attr.value.to_vec())?;
+                            let value = _raxb::quick_xml::escape::unescape(&value_str)?;
+                            #ident = Some(value.parse()?);
                         }
                     });
                 }
