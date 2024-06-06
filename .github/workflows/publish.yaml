@@ -30,6 +30,7 @@ jobs:
         cargo publish --token ${CRATES_TOKEN} -p raxb
         cargo publish --token ${CRATES_TOKEN} -p raxb-xmlschema-build
         cargo publish --token ${CRATES_TOKEN} -p raxb-validate
+        cargo publish --token ${CRATES_TOKEN} -p raxb-axum
       env:
         CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
     - uses: actions/setup-node@v4
