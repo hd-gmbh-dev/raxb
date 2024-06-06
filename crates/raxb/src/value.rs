@@ -8,6 +8,12 @@ pub struct ConstStr {
     output_value: &'static str,
 }
 
+impl std::fmt::Display for ConstStr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.input_value.fmt(f)
+    }
+}
+
 impl AsRef<str> for ConstStr {
     fn as_ref(&self) -> &str {
         &self.input_value
