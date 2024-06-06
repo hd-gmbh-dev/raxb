@@ -26,4 +26,5 @@ syn = { version = "2", features = [
 ] }
 quote = "1.0"
 proc-macro2 = "1.0"
+quick-xml.workspace = true
 strum = { version = "0.26", features = ["derive"] }

@@ -19,5 +19,6 @@ pub use raxb_derive::XmlSerialize;
 pub mod de;
 pub mod ser;
 pub mod ty;
+pub mod value;
 
 pub use quick_xml;

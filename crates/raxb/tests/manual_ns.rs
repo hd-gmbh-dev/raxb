@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use quick_xml::events::BytesText;
 use quick_xml::{events::Event, name::ResolveResult};
 use raxb::de::{XmlDeserialize, XmlDeserializeError};
