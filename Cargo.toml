@@ -22,7 +22,7 @@ raxb-derive = { version = "0.3.6", path = "crates/raxb-derive" }
 raxb-validate = { version = "0.3.6", path = "crates/raxb-validate" }
 raxb-xmlschema = { version = "0.3.6", path = "crates/raxb-xmlschema" }
 raxb-xmlschema-build = { version = "0.3.6", path = "crates/raxb-xmlschema-build" }
-raxb-axum = { version = "0.3.6", path = "crates/raxb-xmlschema-build" }
+raxb-axum = { version = "0.3.6", path = "crates/raxb-axum" }
 
 anyhow = "1"
 async-trait = "0.1"
