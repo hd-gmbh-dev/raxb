@@ -38,14 +38,16 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             };
             if matches!(f.ty, EleType::Child) {
                 if is_qualified {
-                    let deserialize_value = create_deserialize_value(tag, ty, ident, is_array);
+                    let deserialize_value =
+                        create_deserialize_value(tag, ty, ident, is_array, f.default);
                     qualified_child_branches.push(quote! {
                         #tag => {
                             #deserialize_value
                         }
                     });
                 } else {
-                    let deserialize_value = create_deserialize_value(tag, ty, ident, is_array);
+                    let deserialize_value =
+                        create_deserialize_value(tag, ty, ident, is_array, f.default);
                     unqualified_child_branches.push(quote! {
                         #tag => {
                             #deserialize_value
@@ -56,7 +58,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             if matches!(f.ty, EleType::SelfClosedChild) {
                 if is_qualified {
                     let deserialize_value_sfc =
-                        create_deserialize_value_sfc(tag, ty, ident, is_array);
+                        create_deserialize_value_sfc(tag, ty, ident, is_array, f.default);
                     qualified_sfc_branches.push(quote! {
                         #tag => {
                             #deserialize_value_sfc
@@ -64,7 +66,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                     });
                 } else {
                     let deserialize_value_sfc =
-                        create_deserialize_value_sfc(tag, ty, ident, is_array);
+                        create_deserialize_value_sfc(tag, ty, ident, is_array, f.default);
                     unqualified_sfc_branches.push(quote! {
                         #tag => {
                             #deserialize_value_sfc
@@ -189,6 +191,7 @@ fn create_deserialize_value_sfc(
     ty: &syn::Type,
     ident: &syn::Ident,
     is_array: bool,
+    default: bool,
 ) -> proc_macro2::TokenStream {
     let assignment = if is_array {
         quote! {
@@ -209,10 +212,17 @@ fn create_deserialize_value_sfc(
                     #assignment
                 };
             } else if built_in_ty.is_unknown() {
-                return quote! {
-                    let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true)?;
-                    #assignment
-                };
+                if default {
+                    return quote! {
+                        let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true).unwrap_or_default();
+                        #assignment
+                    };
+                } else {
+                    return quote! {
+                        let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true)?;
+                        #assignment
+                    };
+                }
             }
         }
     }
@@ -224,6 +234,7 @@ fn create_deserialize_value(
     ty: &syn::Type,
     ident: &syn::Ident,
     is_array: bool,
+    default: bool,
 ) -> proc_macro2::TokenStream {
     let assignment = if is_array {
         quote! {
@@ -247,13 +258,29 @@ fn create_deserialize_value(
                     }
                 };
             } else if built_in_ty.is_bool() || built_in_ty.is_number() {
+                if default {
+                    return quote! {
+                        let mut buffer: Vec<u8> = Vec::<u8>::new();
+                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                            let str_value = t.unescape()?;
+                            let value : #ty = str_value.parse().unwrap_or_default();
+                            #assignment
+                        }
+                    };
+                } else {
+                    return quote! {
+                        let mut buffer: Vec<u8> = Vec::<u8>::new();
+                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                            let str_value = t.unescape()?;
+                            let value : #ty = str_value.parse()?;
+                            #assignment
+                        }
+                    };
+                }
+            } else if default {
                 return quote! {
-                    let mut buffer: Vec<u8> = Vec::<u8>::new();
-                    if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                        let str_value = t.unescape()?;
-                        let value : #ty = str_value.parse()?;
-                        #assignment
-                    }
+                    let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false).unwrap_or_default();
+                    #assignment
                 };
             } else {
                 return quote! {
