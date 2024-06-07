@@ -1,6 +1,15 @@
 use raxb::{XmlDeserialize, XmlSerialize};
 
 #[derive(Debug, XmlDeserialize, XmlSerialize)]
+#[raxb(root = b"m")]
+pub struct M {
+    #[raxb(name = b"o", ty = "child")]
+    pub o: f32,
+    #[raxb(name = b"u", ty = "child")]
+    pub u: Option<f32>,
+}
+
+#[derive(Debug, PartialEq, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"k")]
 pub struct K {
     #[raxb(name = b"id", ty = "attr")]
@@ -11,7 +20,7 @@ pub struct K {
     pub content: String,
 }
 
-#[derive(Debug, XmlDeserialize, XmlSerialize)]
+#[derive(Debug, PartialEq, XmlDeserialize, XmlSerialize)]
 #[raxb(root = b"f")]
 pub struct F {
     #[raxb(name = b"h", ty = "child")]
@@ -46,6 +55,18 @@ pub struct A {
     pub c: String,
     #[raxb(name = b"d", ty = "child")]
     pub d: D,
+}
+
+#[test]
+fn test_serialize_derive_2() -> anyhow::Result<()> {
+    let a = M {
+        o: 9.99,
+        u: Some(1.11),
+    };
+    let xml = raxb::ser::to_string(&a)?;
+    assert_eq!(r#"<m><o>9.99</o><u>1.11</u></m>"#, xml);
+
+    Ok(())
 }
 
 #[test]
@@ -123,5 +144,63 @@ fn test_deserialize_with_derive_macro() -> anyhow::Result<()> {
     assert_eq!(a.d.k.first().unwrap().n, 32);
     assert_eq!(a.d.k.get(1).unwrap().id.as_ref().unwrap(), "two");
     assert_eq!(a.d.k.get(1).unwrap().n, 64);
+    Ok(())
+}
+
+#[test]
+fn test_deserialize_with_derive_macro_2() -> anyhow::Result<()> {
+    let xml = r#"<a id="root">
+        <b/>
+        <c>hello xml</c>
+        <d name="a1">
+            <f> <h>Hello</h> <j>World</j> </f>
+            <k id="id1" n="0"> hello hello </k>
+            <d name="inner_d">
+                <e>0</e>
+                <e>1</e>
+                <e>2</e>
+                <e>3</e>
+                <e>4</e>
+                <k id="id2" n="9278345">this text belongs to K struct</k>
+                <k id="id3" n="6543">this text also belongs to K struct</k>
+            </d>
+        </d>
+        </a>
+        "#;
+
+    let a = raxb::de::from_str::<A>(xml)?;
+    assert!(a.b);
+    assert_eq!(a.c, "hello xml");
+    assert_eq!(
+        a.d.f,
+        vec![F {
+            h: Some("Hello".to_string()),
+            j: "World".to_string()
+        }]
+    );
+    assert_eq!(a.d.k.first().unwrap().id.as_ref().unwrap(), "id1");
+    assert_eq!(a.d.d.first().unwrap().e, vec![0, 1, 2, 3, 4]);
+    assert_eq!(a.d.d.first().unwrap().e.get(4).unwrap(), &4);
+    assert_eq!(
+        a.d.d.first().unwrap().k,
+        vec![
+            K {
+                id: Some("id2".to_string()),
+                n: 9278345,
+                content: "this text belongs to K struct".to_string()
+            },
+            K {
+                id: Some("id3".to_string()),
+                n: 6543,
+                content: "this text also belongs to K struct".to_string()
+            }
+        ]
+    );
+    assert_eq!(a.d.d.first().unwrap().k.first().unwrap().n, 9278345);
+    assert_eq!(a.d.d.first().unwrap().k.get(1).unwrap().n, 6543);
+    assert_eq!(
+        a.d.d.first().unwrap().k.get(1).unwrap().content,
+        "this text also belongs to K struct".to_string()
+    );
     Ok(())
 }
