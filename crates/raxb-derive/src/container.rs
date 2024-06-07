@@ -340,7 +340,7 @@ pub enum Derive {
 }
 
 fn get_xmlserde_meta_items(attr: &syn::Attribute) -> Result<Vec<syn::Meta>, ()> {
-    if attr.path() != RAXB {
+    if attr.path() != RAXB && attr.path() != XML {
         return Ok(Vec::new());
     }
 
