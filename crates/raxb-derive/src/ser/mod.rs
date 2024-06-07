@@ -6,6 +6,7 @@ use crate::container::{self, Container};
 mod attrs;
 mod child;
 mod text;
+mod ty_enum;
 mod ty_struct;
 
 pub fn xml_serialize_impl_block(input: DeriveInput) -> proc_macro2::TokenStream {
@@ -14,8 +15,7 @@ pub fn xml_serialize_impl_block(input: DeriveInput) -> proc_macro2::TokenStream 
     container.validate();
     if container.is_enum() {
         // eprintln!("run ty_enum::impl_block");
-        // ty_enum::impl_block(container)
-        quote! {}
+        ty_enum::impl_block(container)
     } else {
         let is_simple_type = container
             .struct_fields

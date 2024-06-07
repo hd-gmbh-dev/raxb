@@ -21,6 +21,10 @@ pub enum XmlSerializeError {
 pub type XmlSerializeResult<T> = Result<T, XmlSerializeError>;
 
 pub trait XmlSerialize {
+    fn is_enum() -> bool {
+        false
+    }
+
     fn root() -> Option<XmlTag> {
         None
     }
@@ -37,7 +41,11 @@ where
     T: XmlSerialize,
 {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
-    let name = std::str::from_utf8(T::root().ok_or(XmlSerializeError::MissingRoot)?)?;
+    let name = if T::is_enum() {
+        ""
+    } else {
+        std::str::from_utf8(T::root().ok_or(XmlSerializeError::MissingRoot)?)?
+    };
     value.xml_serialize(name, &mut writer)?;
     Ok(String::from_utf8(writer.into_inner().into_inner())?)
 }
@@ -47,7 +55,12 @@ where
     T: XmlSerialize,
 {
     let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
-    let name = std::str::from_utf8(T::root().ok_or(XmlSerializeError::MissingRoot)?)?;
+    let name = if T::is_enum() {
+        ""
+    } else {
+        std::str::from_utf8(T::root().ok_or(XmlSerializeError::MissingRoot)?)?
+    };
+
     value.xml_serialize(name, &mut writer)?;
     Ok(String::from_utf8(writer.into_inner().into_inner())?)
 }
