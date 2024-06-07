@@ -3,7 +3,7 @@ use crate::symbol::*;
 use strum::EnumString;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::Meta::{self, NameValue};
+use syn::Meta::{self, NameValue, Path};
 use syn::Variant;
 
 #[allow(non_camel_case_types)]
@@ -183,6 +183,7 @@ pub struct StructField<'a> {
     pub generic: Generic<'a>,
     pub ns: Option<syn::LitByteStr>,
     pub value: Option<syn::LitStr>,
+    pub default: bool,
 }
 
 impl<'a> StructField<'a> {
@@ -191,6 +192,7 @@ impl<'a> StructField<'a> {
         let mut ns = Option::<syn::LitByteStr>::None;
         let mut value = Option::<syn::LitStr>::None;
         let mut ty = Option::<EleType>::None;
+        let mut default = false;
         let generic = get_generics(&f.ty);
         for meta_item in f.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
             match meta_item {
@@ -224,6 +226,9 @@ impl<'a> StructField<'a> {
                         ty = Some(t);
                     }
                 }
+                Path(p) if p == DEFAULT => {
+                    default = true;
+                }
                 _ => panic!("unexpected"),
             }
         }
@@ -235,6 +240,7 @@ impl<'a> StructField<'a> {
                 generic,
                 ns,
                 value,
+                default,
             })
         } else if f.ident.is_none() {
             Some(StructField {
@@ -244,6 +250,7 @@ impl<'a> StructField<'a> {
                 generic,
                 ns,
                 value,
+                default,
             })
         } else {
             None

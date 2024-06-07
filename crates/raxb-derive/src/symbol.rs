@@ -9,6 +9,7 @@ pub const RAXB: Symbol = Symbol("raxb");
 pub const XML: Symbol = Symbol("xml");
 pub const NAME: Symbol = Symbol("name");
 pub const VALUE: Symbol = Symbol("value");
+pub const DEFAULT: Symbol = Symbol("default");
 pub const TYPE: Symbol = Symbol("ty");
 pub const TNS: Symbol = Symbol("tns");
 pub const NS: Symbol = Symbol("ns");

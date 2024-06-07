@@ -7,7 +7,12 @@ fn create_return_value(fields: &[StructField]) -> proc_macro2::TokenStream {
     let branch = fields.iter().map(|f| {
         let ident = f.original.ident.as_ref().unwrap();
         let field_name: LitByteStr = syn::parse_str(&format!("b\"{ident}\"")).unwrap();
-        if f.is_required() {
+        if f.default {
+            quote! {
+                #ident: #ident.unwrap_or_default(),
+            }
+        }
+        else if f.is_required() {
             if matches!(f.ty, EleType::Attr) {
                 quote! {
                     #ident: #ident.ok_or(_raxb::de::XmlDeserializeError::MissingAttribute(_raxb::ty::S(#field_name)))?,
