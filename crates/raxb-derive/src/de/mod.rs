@@ -13,7 +13,6 @@ pub fn xml_deserialize_impl_block(input: DeriveInput) -> proc_macro2::TokenStrea
     // eprintln!("validate container");
     container.validate();
     if container.is_enum() {
-        // eprintln!("run ty_enum::impl_block");
         ty_enum::impl_block(container)
     } else {
         let is_simple_type = container

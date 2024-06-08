@@ -263,8 +263,10 @@ impl<'a> StructField<'a> {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 pub struct EnumVariant<'a> {
     pub name: Option<syn::LitByteStr>,
+    pub ns: Option<syn::LitByteStr>,
     pub ident: &'a syn::Ident,
     pub ty: Option<&'a syn::Type>,
     pub ele_type: EleType,
@@ -273,12 +275,18 @@ pub struct EnumVariant<'a> {
 impl<'a> EnumVariant<'a> {
     pub fn from_ast(v: &'a Variant) -> Self {
         let mut name = Option::<syn::LitByteStr>::None;
+        let mut ns = Option::<syn::LitByteStr>::None;
         let mut ele_type = EleType::Child;
         for meta_item in v.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
             match meta_item {
                 NameValue(m) if m.path == NAME => {
                     if let Ok(s) = get_lit_byte_str(&m.value) {
                         name = Some(s.clone());
+                    }
+                }
+                NameValue(m) if m.path == NS => {
+                    if let Ok(s) = get_lit_byte_str(&m.value) {
+                        ns = Some(s.clone());
                     }
                 }
                 NameValue(m) if m.path == TYPE => {
@@ -309,6 +317,7 @@ impl<'a> EnumVariant<'a> {
         let ident = &v.ident;
         EnumVariant {
             name,
+            ns,
             ty,
             ident,
             ele_type,
@@ -317,6 +326,7 @@ impl<'a> EnumVariant<'a> {
 }
 
 /// Specify where this field is in the xml.
+#[derive(Debug)]
 pub enum EleType {
     Attr,
     Child,

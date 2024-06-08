@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use quote::quote;
+use syn::{AngleBracketedGenericArguments, GenericArgument, PathArguments};
 
 use crate::container::{BuiltInType, Container, EleType, FieldsSummary, Generic};
 
@@ -288,7 +289,64 @@ fn create_deserialize_value(
                     #assignment
                 };
             }
+        } else if let Some(path) = p.path.segments.first() {
+            let ident = &path.ident;
+            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+                args, ..
+            }) = &path.arguments
+            {
+                let args = args.iter().filter_map(|a| {
+                    if let GenericArgument::Type(p) = a {
+                        Some(p)
+                    } else {
+                        None
+                    }
+                });
+                return quote! {
+                    let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
+                    #assignment
+                };
+            }
         }
     }
     quote! {}
 }
+
+// HERE Type::Path {
+//     qself: None,
+//     path: Path {
+//         leading_colon: None,
+//         segments: [
+//             PathSegment {
+//                 ident: Ident {
+//                     ident: "XmlProfil",
+//                     span: #0 bytes(16062..16071),
+//                 },
+//                 arguments: PathArguments::AngleBracketed {
+//                     colon2_token: None,
+//                     lt_token: Lt,
+//                     args: [
+//                         GenericArgument::Type(
+//                             Type::Path {
+//                                 qself: None,
+//                                 path: Path {
+//                                     leading_colon: None,
+//                                     segments: [
+//                                         PathSegment {
+//                                             ident: Ident {
+//                                                 ident: "P",
+//                                                 span: #0 bytes(16072..16073),
+//                                             },
+//                                             arguments: PathArguments::None,
+//                                         },
+//                                     ],
+//                                 },
+//                             },
+//                         ),
+//                     ],
+//                     gt_token: Gt,
+//                 },
+//             },
+//         ],
+//     },
+// }

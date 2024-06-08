@@ -1,7 +1,10 @@
 use quote::quote;
 use syn::LitByteStr;
 
-use crate::container::{Container, EleType, FieldsSummary, StructField};
+use crate::{
+    container::{Container, EleType, FieldsSummary, StructField},
+    utils::{create_root_impl, create_tns_impl},
+};
 
 fn create_return_value(fields: &[StructField]) -> proc_macro2::TokenStream {
     let branch = fields.iter().map(|f| {
@@ -79,30 +82,6 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                 #tns_impl
             }
         };
-    }
-}
-
-fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
-    if let Some(root) = container.root.as_ref() {
-        quote! {
-            fn root() -> Option<_raxb::ty::XmlTag> {
-                Some(#root)
-            }
-        }
-    } else {
-        quote! {}
-    }
-}
-
-fn create_tns_impl(container: &Container) -> proc_macro2::TokenStream {
-    if let Some((_, ns)) = container.tns.as_ref() {
-        quote! {
-            fn target_ns() -> Option<_raxb::ty::XmlTargetNs> {
-                Some(#ns)
-            }
-        }
-    } else {
-        quote! {}
     }
 }
 

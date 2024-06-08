@@ -30,6 +30,10 @@ pub enum XmlDeserializeError {
     EmptyNode,
     #[error("missing root element name, try to implement 'fn root() -> XmlTag {{ b\"my-root-element-name\" }}'")]
     MissingRoot,
+    #[error("missing element name, expected one of {0}")]
+    MissingVariant(S),
+    #[error("unknown variant '{0}', expected one of {1}")]
+    UnknownVariant(String, S),
     #[error("missing element '{0}'")]
     MissingElement(S),
     #[error("missing attribute '{0}'")]
@@ -37,6 +41,10 @@ pub enum XmlDeserializeError {
 }
 
 pub trait XmlDeserialize {
+    fn is_enum() -> bool {
+        false
+    }
+
     fn root() -> Option<XmlTag> {
         None
     }
@@ -62,6 +70,13 @@ where
     T: XmlDeserialize,
     R: BufRead,
 {
+    if T::is_enum() {
+        if let Some(target_ns) = T::target_ns() {
+            return T::xml_deserialize(&mut rdr, target_ns, &[], Attributes::new("", 0), false);
+        } else {
+            return T::xml_deserialize(&mut rdr, &[], &[], Attributes::new("", 0), false);
+        }
+    }
     let mut buf = Vec::<u8>::new();
     let mut result = Option::<T>::None;
     let root = T::root().ok_or(XmlDeserializeError::MissingRoot)?;
@@ -77,6 +92,9 @@ where
                             e.attributes(),
                             false,
                         )?);
+                    } else {
+                        let mut buf = Vec::<u8>::new();
+                        rdr.read_to_end_into(e.name(), &mut buf)?;
                     }
                 }
                 (ResolveResult::Bound(tns), Event::Empty(e)) => {
@@ -108,6 +126,9 @@ where
                             e.attributes(),
                             false,
                         )?);
+                    } else {
+                        let mut buf = Vec::<u8>::new();
+                        rdr.read_to_end_into(e.name(), &mut buf)?;
                     }
                 }
                 (ResolveResult::Unbound, Event::Empty(e)) => {
