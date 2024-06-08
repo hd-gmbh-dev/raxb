@@ -289,25 +289,23 @@ fn create_deserialize_value(
                     #assignment
                 };
             }
-        } else {
-            if let Some(path) = p.path.segments.first() {
-                let ident = &path.ident;
-                if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
-                    args,
-                    ..
-                }) = &path.arguments {
-                    let args = args.iter().filter_map(|a| {
-                        if let GenericArgument::Type(p) = a {
-                            Some(p)
-                        } else {
-                            None
-                        }
-                    });
-                    return quote! {
-                        let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
-                        #assignment
-                    };
-                }
+        } else if let Some(path) = p.path.segments.first() {
+            let ident = &path.ident;
+            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+                args, ..
+            }) = &path.arguments
+            {
+                let args = args.iter().filter_map(|a| {
+                    if let GenericArgument::Type(p) = a {
+                        Some(p)
+                    } else {
+                        None
+                    }
+                });
+                return quote! {
+                    let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
+                    #assignment
+                };
             }
         }
     }

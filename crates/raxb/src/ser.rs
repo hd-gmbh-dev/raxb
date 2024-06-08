@@ -55,7 +55,11 @@ where
     T: XmlSerialize,
 {
     let mut writer = Writer::new(Cursor::new(Vec::new()));
-    writer.write_event(quick_xml::events::Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), Some("yes"))))?;
+    writer.write_event(quick_xml::events::Event::Decl(BytesDecl::new(
+        "1.0",
+        Some("UTF-8"),
+        Some("yes"),
+    )))?;
     let name = if T::is_enum() {
         ""
     } else {
@@ -85,7 +89,11 @@ where
     T: XmlSerialize,
 {
     let mut writer = Writer::new_with_indent(Cursor::new(Vec::new()), b' ', 2);
-    writer.write_event(quick_xml::events::Event::Decl(BytesDecl::new("1.0", Some("UTF-8"), Some("yes"))))?;
+    writer.write_event(quick_xml::events::Event::Decl(BytesDecl::new(
+        "1.0",
+        Some("UTF-8"),
+        Some("yes"),
+    )))?;
     let name = if T::is_enum() {
         ""
     } else {
