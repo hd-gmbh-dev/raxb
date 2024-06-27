@@ -58,16 +58,24 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
         const _: () = {
             #[allow(unused_extern_crates, clippy::useless_attribute, clippy::manual_flatten, clippy::single_match)]
             extern crate raxb as _raxb;
-
+            use _raxb::{
+                de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult},
+                quick_xml::{
+                    events::{attributes::Attributes, Event},
+                    name::ResolveResult,
+                    NsReader,
+                },
+                ty::{XmlTag, XmlTargetNs, S},
+            };
             #[automatically_derived]
-            impl #impl_generics _raxb::de::XmlDeserialize for #ident #type_generics #where_clause {
+            impl #impl_generics XmlDeserialize for #ident #type_generics #where_clause {
                 fn xml_deserialize<R: std::io::BufRead>(
-                    reader: &mut _raxb::quick_xml::NsReader<R>,
-                    target_ns: _raxb::ty::XmlTag,
-                    tag: _raxb::ty::XmlTargetNs,
-                    attributes: _raxb::quick_xml::events::attributes::Attributes,
+                    reader: &mut NsReader<R>,
+                    target_ns: XmlTag,
+                    tag: XmlTargetNs,
+                    attributes: Attributes,
                     is_empty: bool,
-                ) -> _raxb::de::XmlDeserializeResult<Self> {
+                ) -> XmlDeserializeResult<Self> {
                     let target_ns = Self::target_ns().unwrap_or(target_ns);
 
                     #fields_init

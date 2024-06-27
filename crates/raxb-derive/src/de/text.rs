@@ -52,7 +52,6 @@ fn create_assing_value(f: &StructField) -> proc_macro2::TokenStream {
 pub fn create_assignments(f: &StructField) -> proc_macro2::TokenStream {
     let assing_value = create_assing_value(f);
     quote! {
-        use _raxb::quick_xml::{events::Event, name::ResolveResult};
         let mut buf = Vec::<u8>::new();
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
