@@ -24,3 +24,11 @@ Add dependency to Cargo.toml:
 [dependencies]
 raxb = "0.3"
 ```
+
+## Development
+
+The project is using Rust, C++, JavaScript and TypeScript to provide its functionality.
+
+To simplify project setup one can use Visual Studio Code with DevContainers feature enabled.
+
+References: <https://code.visualstudio.com/docs/devcontainers/containers>
