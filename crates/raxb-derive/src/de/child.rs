@@ -165,7 +165,6 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         || has_qualified_sfcs
     {
         quote! {
-            use _raxb::quick_xml::{events::Event, name::ResolveResult};
             let mut buf = Vec::<u8>::new();
 
             loop {
