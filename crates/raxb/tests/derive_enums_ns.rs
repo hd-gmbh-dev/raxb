@@ -1,5 +1,4 @@
-use quick_xml::{events::Event, name::ResolveResult};
-use raxb::{de::XmlDeserializeError, ty::S, value::ConstStr, XmlDeserialize, XmlSerialize};
+use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
 
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(root = b"a")]
