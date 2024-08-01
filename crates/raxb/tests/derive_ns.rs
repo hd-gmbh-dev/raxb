@@ -86,3 +86,26 @@ fn test_deserialize_ns_with_derive_macro_with_decl() -> anyhow::Result<()> {
     eprintln!("{xsd:#?}");
     Ok(())
 }
+
+#[test]
+fn test_deserialize_real_schema() -> anyhow::Result<()> {
+    let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="https://gitlab.opencode.de/akdb/xoev/xwasser/-/raw/main/V0_5_0"
+           version="0.5.0"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+   <xs:include schemaLocation="xwasser-administration.xsd"/>
+   <xs:include schemaLocation="xwasser-basisdatentypen.xsd"/>
+   <xs:include schemaLocation="xwasser-basisnachricht.xsd"/>
+   <xs:include schemaLocation="xwasser-baukasten-erweiterung.xsd"/>
+   <xs:include schemaLocation="xwasser-baukasten.xsd"/>
+   <xs:include schemaLocation="xwasser-rueckweisung.xsd"/>
+   <xs:include schemaLocation="xwasser-vorgang.xsd"/>
+   <xs:include schemaLocation="xwasser-weiterleitung.xsd"/>
+   <xs:include schemaLocation="xwasser-weiterleitungsnachrichten.xsd"/>
+</xs:schema>"#;
+    let xsd: Xsd = raxb::de::from_str(xml)?;
+    eprintln!("{xsd:#?}");
+    Ok(())
+}

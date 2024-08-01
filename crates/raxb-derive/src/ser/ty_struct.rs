@@ -56,20 +56,20 @@ fn create_root_element_impl(container: &Container) -> proc_macro2::TokenStream {
             el_writer.write_empty()?;
         }
     };
-    let create_el = if let Some((prefix, ns)) = container.tns.as_ref() {
-        let prefix_buf = prefix.value();
-        let prefix = std::str::from_utf8(&prefix_buf).unwrap();
-        let ns_buf = ns.value();
-        let ns = std::str::from_utf8(&ns_buf).unwrap();
-        let key = if !prefix.is_empty() {
-            format!("xmlns:{prefix}")
-        } else {
-            "xmlns".to_string()
-        };
-        quote! { writer.create_element(tag).with_attribute((#key, #ns)) }
-    } else {
-        quote! { writer.create_element(tag) }
-    };
+    // let create_el = if let Some((prefix, ns)) = container.tns.as_ref() {
+    //     let prefix_buf = prefix.value();
+    //     let prefix = std::str::from_utf8(&prefix_buf).unwrap();
+    //     let ns_buf = ns.value();
+    //     let ns = std::str::from_utf8(&ns_buf).unwrap();
+    //     let key = if !prefix.is_empty() {
+    //         format!("xmlns:{prefix}")
+    //     } else {
+    //         "xmlns".to_string()
+    //     };
+    //     quote! { writer.create_element(tag).with_attribute((#key, #ns)) }
+    // } else {
+    // };
+    let create_el = quote! { writer.create_element(tag) };
     if has_attributes || has_child_blocks {
         let attribute_blocks = attribute_blocks.into_iter();
         quote! {

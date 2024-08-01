@@ -40,7 +40,8 @@ fn create_assing_value(f: &StructField) -> proc_macro2::TokenStream {
             } else {
                 quote! {
                     let str_value = ev.unescape()?;
-                    let value : #ty = str_value.parse()?;
+                    eprintln!("parse at {:?}", tag);
+                    let value : #ty = str_value.trim().parse()?;
                     #assignment
                 }
             };

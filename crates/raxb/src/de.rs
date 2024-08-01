@@ -65,11 +65,14 @@ pub trait XmlDeserialize {
         R: BufRead;
 }
 
-fn deserialize_with_reader<T, R>(mut rdr: NsReader<R>) -> XmlDeserializeResult<T>
+pub fn deserialize_with_reader<T, R>(mut rdr: NsReader<R>) -> XmlDeserializeResult<T>
 where
     T: XmlDeserialize,
     R: BufRead,
 {
+    rdr.trim_text(true);
+    rdr.check_comments(false);
+    rdr.expand_empty_elements(false);
     if T::is_enum() {
         if let Some(target_ns) = T::target_ns() {
             return T::xml_deserialize(&mut rdr, target_ns, &[], Attributes::new("", 0), false);

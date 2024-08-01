@@ -263,7 +263,8 @@ fn create_deserialize_value(
                         let mut buffer: Vec<u8> = Vec::<u8>::new();
                         if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
                             let str_value = t.unescape()?;
-                            let value : #ty = str_value.parse().unwrap_or_default();
+                            eprintln!("parse at {:?}", tag);
+                            let value : #ty = str_value.trim().parse().unwrap_or_default();
                             #assignment
                         }
                     };
@@ -272,7 +273,8 @@ fn create_deserialize_value(
                         let mut buffer: Vec<u8> = Vec::<u8>::new();
                         if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
                             let str_value = t.unescape()?;
-                            let value : #ty = str_value.parse()?;
+                            eprintln!("parse at {:?}", tag);
+                            let value : #ty = str_value.trim().parse()?;
                             #assignment
                         }
                     };
