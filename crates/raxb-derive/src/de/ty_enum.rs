@@ -97,6 +97,15 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             #[allow(unused_extern_crates, clippy::useless_attribute, clippy::manual_flatten, clippy::single_match)]
             extern crate raxb as _raxb;
 
+            use _raxb::{
+                de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult},
+                quick_xml::{
+                    events::{attributes::Attributes, Event},
+                    name::ResolveResult,
+                    NsReader,
+                },
+                ty::{XmlTag, XmlTargetNs, S},
+            };
             #[automatically_derived]
             impl #impl_generics _raxb::de::XmlDeserialize for #ident #type_generics #where_clause {
                 fn xml_deserialize<R: std::io::BufRead>(
