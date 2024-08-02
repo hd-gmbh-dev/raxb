@@ -70,9 +70,9 @@ where
     T: XmlDeserialize,
     R: BufRead,
 {
-    rdr.trim_text(true);
-    rdr.check_comments(false);
-    rdr.expand_empty_elements(false);
+    rdr.config_mut().trim_text(true);
+    rdr.config_mut().check_comments = false;
+    rdr.config_mut().expand_empty_elements = false;
     if T::is_enum() {
         if let Some(target_ns) = T::target_ns() {
             return T::xml_deserialize(&mut rdr, target_ns, &[], Attributes::new("", 0), false);

@@ -262,7 +262,7 @@ pub fn validate_xml(xml: &[u8], schema: &XmlSchemaPtr) -> ValidationResult<()> {
 
 pub fn find_root_xsi_schema_location(xml: &[u8]) -> Result<String, ValidationError> {
     let mut reader = NsReader::from_reader(xml);
-    reader.trim_text(true);
+    reader.config_mut().trim_text(true);
     let mut buf = Vec::new();
     let mut schema_location: Option<String> = None;
     loop {
