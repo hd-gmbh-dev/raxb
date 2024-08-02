@@ -41,6 +41,14 @@ public:
         return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
     }
 
+    uint32_t readU32_LE() {
+        auto b1 = this->readU8();
+        auto b2 = this->readU8();
+        auto b3 = this->readU8();
+        auto b4 = this->readU8();
+        return b1 | (b2 << 8) | (b3 << 16) | (b4 << 24);
+    }
+
     uint64_t readU64() {
         uint64_t b2 = this->readU32();
         uint32_t b1 = this->readU32();
@@ -315,11 +323,12 @@ public:
         auto memoryView = uint8ArrayObject["constructor"].new_(memory, reinterpret_cast<uintptr_t>(buffer.data()), length);
         memoryView.call<void>("set", uint8ArrayObject);
         U8Reader rdr((uint8_t*)buffer.data(), length);
-        int decompressed_len = (int) rdr.readU32();
+        int decompressed_len = (int) rdr.readU32_LE();
         char* regen_buffer = (char*)malloc(decompressed_len);
         this->_buffer_len = LZ4_decompress_safe((char*)buffer.data() + 4, regen_buffer, (int)length - 4, decompressed_len);
         this->_buffer = regen_buffer;
     }
+
     ~XmlValidator() {
         this->_schema_bundle->destroy();
     }
