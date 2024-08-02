@@ -10,8 +10,6 @@
     "ghcr.io/hd-gmbh-dev/devcontainer-features/autotools:0.1.0": {},
     "ghcr.io/hd-gmbh-dev/devcontainer-features/clang:0": {},
     "ghcr.io/hd-gmbh-dev/devcontainer-features/cmake:0": {},
-    "ghcr.io/hd-gmbh-dev/devcontainer-features/java:0.1.0": {},
-    "ghcr.io/hd-gmbh-dev/devcontainer-features/emscripten:0.1.0": {},
     "ghcr.io/devcontainers/features/rust:1": {}
   },
   "postCreateCommand": "bash scripts/build-dependencies.sh",

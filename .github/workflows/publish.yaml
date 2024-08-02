@@ -1,4 +1,4 @@
-name: Publish to crates.io and registry.npmjs.org
+name: Publish to crates.io
 
 on:
   workflow_call:
@@ -32,22 +32,7 @@ jobs:
         cargo publish --token ${CRATES_TOKEN} -p raxb-validate
         cargo publish --token ${CRATES_TOKEN} -p raxb-axum
       env:
-        CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
-    - uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        registry-url: 'https://registry.npmjs.org'
-    - name: Download a single artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: raxb-validate-wasm
-        path: packages/raxb-validate-wasm/dist
-    - name: Display structure of downloaded files
-      run: ls -R packages/raxb-validate-wasm/dist
-    - run: npm publish --provenance --access public
-      working-directory: ./packages/raxb-validate-wasm/dist
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}    
   release:
       name: Release
       runs-on: ubuntu-latest
