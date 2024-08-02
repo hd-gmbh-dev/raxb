@@ -20,6 +20,7 @@ pub struct A {
 #[xml(tns(b"ns1", b"https://local.dev/example"))]
 pub struct B {
     #[xml(
+        default,
         ns = b"xmlns",
         name = b"ns1",
         ty = "attr",

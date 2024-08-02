@@ -1,30 +1,46 @@
 #![allow(dead_code)]
 
-use raxb::{XmlDeserialize, XmlSerialize};
+use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
 
 #[derive(Debug, XmlDeserialize, XmlSerialize)]
-#[raxb(root = b"Envelope")]
-#[raxb(tns(b"SOAP", b"https://schemas.xmlsoap.org/soap/envelope/"))]
+#[xml(root = b"Envelope")]
+#[xml(tns(b"SOAP", b"https://schemas.xmlsoap.org/soap/envelope/"))]
 pub struct Envelope<T>
 where
     T: raxb::de::XmlDeserialize + raxb::ser::XmlSerialize + std::fmt::Debug,
 {
-    #[raxb(ns = b"SOAP", name = b"Header", ty = "sfc")]
+    #[xml(
+        default,
+        ns = b"xmlns",
+        name = b"SOAP",
+        ty = "attr",
+        value = "https://schemas.xmlsoap.org/soap/envelope/"
+    )]
+    _xmlns: ConstStr,
+    #[xml(ns = b"SOAP", name = b"Header", ty = "sfc")]
     pub header: bool,
-    #[raxb(ns = b"SOAP", name = b"Body", ty = "child")]
+    #[xml(ns = b"SOAP", name = b"Body", ty = "child")]
     pub body: T,
 }
 
 #[derive(Debug, XmlDeserialize, XmlSerialize)]
 pub struct Header {
-    #[raxb(ty = "text")]
+    #[xml(ty = "text")]
     pub content: String,
 }
 
 #[derive(Debug, XmlDeserialize, XmlSerialize)]
-#[raxb(tns(b"ex", b"https://my.example.org/"))]
+#[xml(tns(b"ex", b"https://my.example.org/"))]
 pub struct Example {
-    #[raxb(ns = b"ex", name = b"header", ty = "child")]
+    #[xml(
+        default,
+        ns = b"xmlns",
+        name = b"ex",
+        ty = "attr",
+        value = "https://my.example.org/"
+    )]
+    _xmlns: ConstStr,
+    #[xml(ns = b"ex", name = b"header", ty = "child")]
     pub header: Header,
 }
 
@@ -36,7 +52,9 @@ fn test_serialize_ns_derive() -> anyhow::Result<()> {
             header: Header {
                 content: "BASE_64_ENCODED_XML".to_string(),
             },
+            _xmlns: Default::default(),
         },
+        _xmlns: Default::default(),
     })?;
     assert_eq!(
         xml,
@@ -61,17 +79,17 @@ fn test_deserialize_ns_with_derive_macro() -> anyhow::Result<()> {
 
 #[derive(Debug, XmlDeserialize)]
 pub struct XsdImportOrInclude {
-    #[raxb(name = b"schemaLocation", ty = "attr")]
+    #[xml(name = b"schemaLocation", ty = "attr")]
     pub schema_location: String,
 }
 
 #[derive(Debug, XmlDeserialize)]
-#[raxb(root = b"schema")]
-#[raxb(tns(b"xs", b"http://www.w3.org/2001/XMLSchema"))]
+#[xml(root = b"schema")]
+#[xml(tns(b"xs", b"http://www.w3.org/2001/XMLSchema"))]
 pub struct Xsd {
-    #[raxb(ns = b"xs", name = b"include", ty = "sfc")]
+    #[xml(ns = b"xs", name = b"include", ty = "sfc")]
     pub includes: Vec<XsdImportOrInclude>,
-    #[raxb(ns = b"xs", name = b"import", ty = "sfc")]
+    #[xml(ns = b"xs", name = b"import", ty = "sfc")]
     pub imports: Vec<XsdImportOrInclude>,
 }
 

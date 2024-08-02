@@ -4,7 +4,7 @@ use syn::LitByteStr;
 
 use crate::{
     container::{Container, EnumVariant},
-    utils::{create_tns_impl, get_built_in_type},
+    utils::{create_tns_impl, get_built_in_type, trace},
 };
 
 fn create_variant(
@@ -63,6 +63,8 @@ fn create_variant(
 }
 
 pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
+    let ident = &container.original.ident;
+    let ident_str = ident.to_string();
     let tns_impl = create_tns_impl(&container);
     let variants: Vec<proc_macro2::TokenStream> = container
         .enum_variants
@@ -88,8 +90,24 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
         .collect::<Vec<String>>()
         .join("|");
     let enum_err = LitByteStr::new(enum_err.as_bytes(), Span::call_site());
-    let ident = &container.original.ident;
     let (impl_generics, type_generics, where_clause) = container.original.generics.split_for_impl();
+    let trace_event = |event_type: &'static str| trace(quote! {
+        if tag.is_empty() {
+            if target_ns.is_empty() {
+                debug!("{} enum '{}'", #event_type, #ident_str);
+            } else {
+                debug!("{} enum '{}' with namespace '{}'", #event_type, #ident_str, std::str::from_utf8(target_ns).unwrap());
+            }
+        } else {
+            if target_ns.is_empty() {
+                debug!("{} enum '{}' with tag '{}'", #event_type, #ident_str, std::str::from_utf8(tag).unwrap());
+            } else {
+                debug!("{} enum '{}' with tag '{}' and namespace '{}'", #event_type, #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(target_ns).unwrap());
+            }
+        }
+    });
+    let trace_enter_enum = trace_event("Enter");
+    let trace_leave_enum = trace_event("Leave");    
     quote! {
         #[doc(hidden)]
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
@@ -115,9 +133,10 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     attributes: _raxb::quick_xml::events::attributes::Attributes,
                     is_empty: bool,
                 ) -> _raxb::de::XmlDeserializeResult<Self> {
+                    let target_ns = Self::target_ns().unwrap_or(target_ns);
+                    #trace_enter_enum
                     let mut result = Option::<#ident>::None;
                     let mut buf = Vec::<u8>::new();
-                    let target_ns = Self::target_ns().unwrap_or(target_ns);
                     loop {
                         match reader.read_resolved_event_into(&mut buf)? {
                             (ResolveResult::Unbound, Event::Start(e)) => {
@@ -154,6 +173,33 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                                 break;
                             }
                             _ => {}
+                        }
+                    }
+                    if result.is_some() {
+                        if tag.is_empty() {
+                            #trace_leave_enum
+                        } else {
+                            loop {
+                                match reader.read_resolved_event_into(&mut buf)? {
+                                    (ResolveResult::Bound(ns), Event::End(e)) => if ns.as_ref() == target_ns && e.local_name().as_ref() == tag {
+                                        #trace_leave_enum
+                                        break;
+                                    },
+                                    (ResolveResult::Unbound, Event::End(e)) => if e.local_name().as_ref() == tag {
+                                        #trace_leave_enum
+                                        break;
+                                    },
+                                    (_, Event::Eof) => {
+                                        break;
+                                    }
+                                    #[cfg(not(feature="trace"))]
+                                    _ => {},
+                                    #[cfg(feature="trace")]
+                                    ev => {
+                                        _raxb::tracing::warn!("Unexpected Event: {ev:#?}");
+                                    },
+                                }
+                            }
                         }
                     }
                     result.ok_or(XmlDeserializeError::MissingVariant(S(#enum_err)))

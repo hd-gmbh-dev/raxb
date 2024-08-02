@@ -61,3 +61,18 @@ pub fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
         quote! {}
     }
 }
+
+
+pub fn trace(content: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    quote! {
+        #[cfg(feature = "trace")]
+        {
+            #[allow(unused_extern_crates)]
+            extern crate raxb as _raxb;
+
+            use _raxb::tracing::*;
+
+            #content
+        }
+    }
+}
