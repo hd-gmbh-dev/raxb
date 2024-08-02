@@ -3,7 +3,10 @@ use std::str::FromStr;
 use quote::quote;
 use syn::{AngleBracketedGenericArguments, GenericArgument, PathArguments};
 
-use crate::container::{BuiltInType, Container, EleType, FieldsSummary, Generic};
+use crate::{
+    container::{BuiltInType, Container, EleType, FieldsSummary, Generic},
+    utils::trace,
+};
 
 pub fn init(fields: &FieldsSummary) -> proc_macro2::TokenStream {
     let v = fields.children.iter().map(crate::utils::create_ident);
@@ -18,8 +21,10 @@ pub fn init(fields: &FieldsSummary) -> proc_macro2::TokenStream {
 }
 
 pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
+    let mut qualified_child_terminate_branches = Vec::<proc_macro2::TokenStream>::new();
     let mut qualified_child_branches = Vec::<proc_macro2::TokenStream>::new();
     let mut qualified_sfc_branches = Vec::<proc_macro2::TokenStream>::new();
+    let mut unqualified_child_terminate_branches = Vec::<proc_macro2::TokenStream>::new();
     let mut unqualified_child_branches = Vec::<proc_macro2::TokenStream>::new();
     let mut unqualified_sfc_branches = Vec::<proc_macro2::TokenStream>::new();
 
@@ -39,21 +44,51 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             };
             if matches!(f.ty, EleType::Child) {
                 if is_qualified {
-                    let deserialize_value =
+                    let (deserialize_value, terminates) =
                         create_deserialize_value(tag, ty, ident, is_array, f.default);
+                    let trace_start_elment = trace(quote! {
+                        debug!("Start element with tag '{}'", String::from_utf8_lossy(#tag));
+                    });
                     qualified_child_branches.push(quote! {
                         #tag => {
+                            #trace_start_elment
                             #deserialize_value
                         }
                     });
+
+                    if !terminates {
+                        let trace_end_elment = trace(quote! {
+                            debug!("End element with tag '{}'", String::from_utf8_lossy(#tag));
+                        });
+                        qualified_child_terminate_branches.push(quote! {
+                            #tag => {
+                                #trace_end_elment
+                            }
+                        });
+                    }
                 } else {
-                    let deserialize_value =
+                    let trace_start_elment = trace(quote! {
+                        debug!("Start element with tag '{}'", String::from_utf8_lossy(#tag));
+                    });
+                    let (deserialize_value, terminates) =
                         create_deserialize_value(tag, ty, ident, is_array, f.default);
                     unqualified_child_branches.push(quote! {
                         #tag => {
+                            #trace_start_elment
                             #deserialize_value
                         }
                     });
+
+                    if !terminates {
+                        let trace_end_elment = trace(quote! {
+                            debug!("End element with tag '{}'", String::from_utf8_lossy(#tag));
+                        });
+                        unqualified_child_terminate_branches.push(quote! {
+                            #tag => {
+                                #trace_end_elment
+                            }
+                        });
+                    }
                 }
             }
             if matches!(f.ty, EleType::SelfClosedChild) {
@@ -78,6 +113,26 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         }
     }
 
+    let has_qualified_children_terminate = !qualified_child_terminate_branches.is_empty();
+    let qualified_child_terminate_branch = if has_qualified_children_terminate {
+        let qualified_child_terminate_branches = qualified_child_terminate_branches.into_iter();
+        quote! {
+            (ResolveResult::Bound(ns), Event::End(ev)) => {
+                match ev.local_name().as_ref() {
+                    #(#qualified_child_terminate_branches,)*
+                    #[cfg(not(feature="trace"))]
+                    _ => {},
+                    #[cfg(feature="trace")]
+                    ev => {
+                        _raxb::tracing::warn!("Unexpected End Event: '{}' with namespace: '{}'", String::from_utf8_lossy(ev), String::from_utf8_lossy(ns.as_ref()));
+                    },
+                }
+            },
+        }
+    } else {
+        quote! {}
+    };
+
     let has_qualified_children = !qualified_child_branches.is_empty();
     let qualified_child_branch = if has_qualified_children {
         let qualified_child_branches = qualified_child_branches.into_iter();
@@ -86,6 +141,8 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                 match ev.local_name().as_ref() {
                     #(#qualified_child_branches,)*
                     _ => {
+                        #[cfg(feature="trace")]
+                        _raxb::tracing::warn!("Unexpected Start Event: {ev:#?}");
                         let mut buffer: Vec<u8> = Vec::<u8>::new();
                         reader.read_to_end_into(ev.name(), &mut buffer)?;
                     },
@@ -111,6 +168,26 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         quote! {}
     };
 
+    let has_unqualified_children_terminate = !unqualified_child_terminate_branches.is_empty();
+    let unqualified_child_terminate_branch = if has_unqualified_children_terminate {
+        let unqualified_child_terminate_branches = unqualified_child_terminate_branches.into_iter();
+        quote! {
+            (ResolveResult::Unbound, Event::End(ev)) => {
+                match ev.local_name().as_ref() {
+                    #(#unqualified_child_terminate_branches,)*
+                    #[cfg(not(feature="trace"))]
+                    _ => {},
+                    #[cfg(feature="trace")]
+                    ev => {
+                        _raxb::tracing::warn!("Unexpected End Event: '{}'", String::from_utf8_lossy(ev));
+                    },
+                }
+            },
+        }
+    } else {
+        quote! {}
+    };
+
     let has_unqualified_children = !unqualified_child_branches.is_empty();
     let unqualified_child_branch = if has_unqualified_children {
         let unqualified_child_branches = unqualified_child_branches.into_iter();
@@ -119,6 +196,8 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                 match ev.local_name().as_ref() {
                     #(#unqualified_child_branches,)*
                     _ => {
+                        #[cfg(feature="trace")]
+                        _raxb::tracing::warn!("Unexpected Start Event: {ev:#?}");
                         let mut buffer: Vec<u8> = Vec::<u8>::new();
                         reader.read_to_end_into(ev.name(), &mut buffer)?;
                     },
@@ -143,17 +222,25 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     } else {
         quote! {}
     };
-
+    let ident_str = container.original.ident.to_string();
     let end_branch = if container.tns.is_some() {
         let tns = &container.tns.as_ref().unwrap().1;
+        let trace_end_branch = trace(quote! {
+            debug!("Leave struct '{}' with tag '{}' and namespace '{}'", #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(ns.as_ref()).unwrap());
+        });
         quote! {
             (ResolveResult::Bound(ns), Event::End(e)) if e.local_name().as_ref() == tag && ns.as_ref() == #tns =>  {
+                #trace_end_branch
                 break;
             },
         }
     } else {
+        let trace_end_branch = trace(quote! {
+            debug!("Leave struct '{}' with tag '{}'", #ident_str, std::str::from_utf8(tag).unwrap());
+        });
         quote! {
             (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                #trace_end_branch
                 break;
             },
         }
@@ -174,10 +261,17 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                     #unqualified_child_branch
                     #unqualified_sfc_branch
                     #end_branch
+                    #qualified_child_terminate_branch
+                    #unqualified_child_terminate_branch
                     (_, Event::Eof) => {
                         break;
                     },
+                    #[cfg(not(feature="trace"))]
                     _ => {},
+                    #[cfg(feature="trace")]
+                    ev => {
+                        _raxb::tracing::warn!("Unexpected Event: {ev:#?}");
+                    },
                 }
             }
         }
@@ -235,7 +329,7 @@ fn create_deserialize_value(
     ident: &syn::Ident,
     is_array: bool,
     default: bool,
-) -> proc_macro2::TokenStream {
+) -> (proc_macro2::TokenStream, bool) {
     let assignment = if is_array {
         quote! {
             #ident.push(value);
@@ -250,49 +344,69 @@ fn create_deserialize_value(
             let built_in_ty: BuiltInType =
                 BuiltInType::from_str(&format!("{ident}")).unwrap_or_default();
             if built_in_ty.is_string() {
-                return quote! {
-                    let mut buffer: Vec<u8> = Vec::<u8>::new();
-                    if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                        let value = t.unescape()?.to_string();
-                        #assignment
-                    }
-                };
+                return (
+                    quote! {
+                        let mut buffer: Vec<u8> = Vec::<u8>::new();
+                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                            let value = t.unescape()?.to_string();
+                            #assignment
+                        } else {
+                            let value = "".to_string();
+                            #assignment
+                        }
+                    },
+                    false,
+                );
             } else if built_in_ty.is_bool() || built_in_ty.is_number() {
                 if default {
-                    return quote! {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                            let str_value = t.unescape()?;
-                            let value : #ty = str_value.parse().unwrap_or_default();
-                            #assignment
-                        }
-                    };
+                    return (
+                        quote! {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                                let str_value = t.unescape()?;
+                                let value : #ty = str_value.trim().parse().unwrap_or_default();
+                                #assignment
+                            } else {
+                                let value = #ty::default();
+                                #assignment
+                            }
+                        },
+                        false,
+                    );
                 } else {
-                    return quote! {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                            let str_value = t.unescape()?;
-                            let value : #ty = str_value.parse()?;
-                            #assignment
-                        }
-                    };
+                    return (
+                        quote! {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                                let str_value = t.unescape()?;
+                                let value : #ty = str_value.trim().parse().unwrap_or_default();
+                                #assignment
+                            }
+                        },
+                        false,
+                    );
                 }
             } else if default {
-                return quote! {
-                    let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false).unwrap_or_default();
-                    #assignment
-                };
+                return (
+                    quote! {
+                        let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false).unwrap_or_default();
+                        #assignment
+                    },
+                    true,
+                );
             } else {
-                return quote! {
-                    let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
-                    #assignment
-                };
+                return (
+                    quote! {
+                        let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
+                        #assignment
+                    },
+                    true,
+                );
             }
         } else if let Some(path) = p.path.segments.first() {
             let ident = &path.ident;
-            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
-                args, ..
-            }) = &path.arguments
+            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) =
+                &path.arguments
             {
                 let args = args.iter().filter_map(|a| {
                     if let GenericArgument::Type(p) = a {
@@ -301,51 +415,15 @@ fn create_deserialize_value(
                         None
                     }
                 });
-                return quote! {
-                    let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
-                    #assignment
-                };
+                return (
+                    quote! {
+                        let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
+                        #assignment
+                    },
+                    true,
+                );
             }
         }
     }
-    quote! {}
+    (quote! {}, true)
 }
-
-// HERE Type::Path {
-//     qself: None,
-//     path: Path {
-//         leading_colon: None,
-//         segments: [
-//             PathSegment {
-//                 ident: Ident {
-//                     ident: "XmlProfil",
-//                     span: #0 bytes(16062..16071),
-//                 },
-//                 arguments: PathArguments::AngleBracketed {
-//                     colon2_token: None,
-//                     lt_token: Lt,
-//                     args: [
-//                         GenericArgument::Type(
-//                             Type::Path {
-//                                 qself: None,
-//                                 path: Path {
-//                                     leading_colon: None,
-//                                     segments: [
-//                                         PathSegment {
-//                                             ident: Ident {
-//                                                 ident: "P",
-//                                                 span: #0 bytes(16072..16073),
-//                                             },
-//                                             arguments: PathArguments::None,
-//                                         },
-//                                     ],
-//                                 },
-//                             },
-//                         ),
-//                     ],
-//                     gt_token: Gt,
-//                 },
-//             },
-//         ],
-//     },
-// }

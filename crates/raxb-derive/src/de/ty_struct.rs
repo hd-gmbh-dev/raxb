@@ -3,7 +3,7 @@ use syn::LitByteStr;
 
 use crate::{
     container::{Container, EleType, FieldsSummary, StructField},
-    utils::{create_root_impl, create_tns_impl},
+    utils::{create_root_impl, create_tns_impl, trace},
 };
 
 fn create_return_value(fields: &[StructField]) -> proc_macro2::TokenStream {
@@ -35,6 +35,8 @@ fn create_return_value(fields: &[StructField]) -> proc_macro2::TokenStream {
 }
 
 pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
+    let ident = &container.original.ident;
+    let ident_str = ident.to_string();
     let root_impl = create_root_impl(&container);
     let tns_impl = create_tns_impl(&container);
     let field_assignments = if let Some(f) = container
@@ -50,8 +52,14 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
     let summary = FieldsSummary::from_fields(container.struct_fields);
     let fields_init = create_fields_init(&summary);
     let attr_assignments = super::attrs::create_assignments(&summary);
-    let ident = &container.original.ident;
     let (impl_generics, type_generics, where_clause) = container.original.generics.split_for_impl();
+    let trace_enter_struct = trace(quote! {
+        if target_ns.is_empty() {
+            debug!("Enter struct '{}' with tag '{}'", #ident_str, std::str::from_utf8(tag).unwrap());
+        } else {
+            debug!("Enter struct '{}' with tag '{}' and namespace '{}'", #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(target_ns).unwrap());
+        }
+    });
     quote! {
         #[doc(hidden)]
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
@@ -77,6 +85,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     is_empty: bool,
                 ) -> XmlDeserializeResult<Self> {
                     let target_ns = Self::target_ns().unwrap_or(target_ns);
+                    #trace_enter_struct
 
                     #fields_init
                     #attr_assignments

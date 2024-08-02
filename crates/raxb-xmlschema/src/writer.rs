@@ -91,6 +91,7 @@ pub struct SchemaWriter {
     w: std::io::Cursor<Vec<u8>>,
 }
 
+#[derive(Debug)]
 pub struct SchemaEntry {
     target_namespace: String,
     entrypoint: bool,
@@ -109,6 +110,7 @@ impl SchemaEntry {
 
 impl SchemaWriter {
     pub fn write(mut self, map: BTreeMap<SchemaLocation, SchemaEntry>) -> WriterResult<Vec<u8>> {
+        eprintln!("write {map:#?}");
         use byteorder::WriteBytesExt;
         use std::io::Write;
         let m: Vec<(String, SchemaEntry)> = map

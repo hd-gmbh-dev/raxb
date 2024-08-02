@@ -54,7 +54,7 @@ pub fn create_assignments(fields: &FieldsSummary) -> proc_macro2::TokenStream {
                         #name => {
                             let value_str = String::from_utf8(attr.value.to_vec())?;
                             let value = _raxb::quick_xml::escape::unescape(&value_str)?;
-                            #ident = Some(value.parse()?);
+                            #ident = Some(value.trim().parse().unwrap_or_default());
                         }
                     });
                 }

@@ -23,6 +23,7 @@ pub enum BuildError {
 pub type BuildResult<T> = Result<T, BuildError>;
 
 #[derive(Debug, XmlDeserialize)]
+#[raxb(tns(b"xs", b"http://www.w3.org/2001/XMLSchema"))]
 pub struct XsdImportOrInclude {
     #[raxb(name = b"schemaLocation", ty = "attr")]
     pub schema_location: String,
@@ -110,11 +111,14 @@ impl XmlSchemaRegistry {
                     writeln!(log, "{counter}: {}", schema.location)?;
                 }
                 schema.content = schema.location.get_content(cache_dir)?;
+                eprintln!("{}", schema.content);
                 let Xsd {
                     tns,
                     imports,
                     includes,
                 } = raxb::de::from_str(&schema.content)?;
+                eprintln!("{imports:#?}");
+                eprintln!("{includes:#?}");
                 if schema.entrypoint {
                     if let Some(filename) = schema.filename.as_ref() {
                         filepath = Some(filename.to_owned());

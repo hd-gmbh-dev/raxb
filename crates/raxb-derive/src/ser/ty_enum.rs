@@ -51,7 +51,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                         if v {
                             writer.create_element(#name).write_empty()?;
                         }
-                        Ok(())
+                        Ok::<(), _raxb::ser::XmlSerializeError>(())
                     }
                 });
             } else if built_in_type.is_number() {
@@ -60,7 +60,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                         writer.create_element(#name).write_text_content(
                             &v.to_string()
                         )?;
-                        Ok(())
+                        Ok::<(), _raxb::ser::XmlSerializeError>(())
                     }
                 });
             } else if built_in_type.is_string() {
@@ -71,14 +71,14 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                                 _raxb::quick_xml::escape::escape(&v),
                             ),
                         )?;
-                        Ok(())
+                        Ok::<(), _raxb::ser::XmlSerializeError>(())
                     }
                 });
             } else {
                 return Some(quote! {
                     Self::#variant_ident(v) => {
                         v.xml_serialize(#name, writer)?;
-                        Ok(())
+                        Ok::<(), _raxb::ser::XmlSerializeError>(())
                     }
                 });
             }
@@ -97,13 +97,15 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             return Some(quote! {
                 Self::#variant_ident => {
                     writer.create_element(#name).write_empty()?;
-                    Ok(())
+                    Ok::<(), _raxb::ser::XmlSerializeError>(())
                 }
             });
         }
         None
     });
     let (impl_generics, type_generics, where_clause) = container.original.generics.split_for_impl();
+    let serialize_branches_1 = serialize_branches.clone();
+    let serialize_branches_2 = serialize_branches;
     quote! {
         #[doc(hidden)]
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
@@ -114,10 +116,19 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             #[automatically_derived]
             impl #impl_generics _raxb::ser::XmlSerialize for #ident #type_generics #where_clause {
                 #root_impl
-                fn xml_serialize<W: std::io::Write>(&self, _tag: &str, writer: &mut _raxb::quick_xml::Writer<W>) -> _raxb::ser::XmlSerializeResult<()> {
-                    match self {
-                        #(#serialize_branches,)*
+                fn xml_serialize<W: std::io::Write>(&self, tag: &str, writer: &mut _raxb::quick_xml::Writer<W>) -> _raxb::ser::XmlSerializeResult<()> {
+                    if tag.is_empty() {
+                        match self {
+                            #(#serialize_branches_1,)*
+                        }?;
+                    } else {
+                        writer.create_element(tag).write_inner_content(|writer| {
+                            match self {
+                                #(#serialize_branches_2,)*
+                            }
+                        })?;
                     }
+                    Ok::<(), _raxb::ser::XmlSerializeError>(())
                 }
 
                 fn is_enum() -> bool {

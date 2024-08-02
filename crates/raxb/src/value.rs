@@ -2,10 +2,19 @@ use std::str::FromStr;
 
 use crate::de::XmlDeserializeError;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
+#[derive(Debug, Clone, Default, Eq, PartialOrd, Ord)]
 pub struct ConstStr {
     input_value: String,
     output_value: &'static str,
+}
+
+impl PartialEq for ConstStr {
+    fn eq(&self, other: &Self) -> bool {
+        if !self.output_value.is_empty() && !other.output_value.is_empty() {
+            return self.output_value.eq(other.output_value);
+        }
+        true
+    }
 }
 
 impl std::fmt::Display for ConstStr {

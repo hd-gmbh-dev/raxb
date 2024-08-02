@@ -11,13 +11,17 @@ categories.workspace = true
 keywords.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [features]
+default = []
+trace = ["dep:tracing"]
 
 [dependencies]
 raxb-derive.workspace = true
 thiserror.workspace = true
 quick-xml.workspace = true
+tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 anyhow.workspace = true
+tracing.workspace = true
+test-log = { workspace = true, features = ["trace"] }

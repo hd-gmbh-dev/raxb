@@ -14,6 +14,7 @@
 */
 use std::cmp::Ordering;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::ptr::null_mut;
 use std::{ffi::CStr, sync::Mutex};
 
@@ -261,7 +262,7 @@ pub fn validate_xml(xml: &[u8], schema: &XmlSchemaPtr) -> ValidationResult<()> {
 
 pub fn find_root_xsi_schema_location(xml: &[u8]) -> Result<String, ValidationError> {
     let mut reader = NsReader::from_reader(xml);
-    reader.trim_text(true);
+    reader.config_mut().trim_text(true);
     let mut buf = Vec::new();
     let mut schema_location: Option<String> = None;
     loop {
@@ -284,7 +285,16 @@ pub fn find_root_xsi_schema_location(xml: &[u8]) -> Result<String, ValidationErr
         }
         buf.clear();
     }
-    schema_location.ok_or(ValidationError::NoSchemaLocation)
+    schema_location
+        .ok_or(ValidationError::NoSchemaLocation)
+        .map(|s| {
+            if let Some((a, b)) = s.split_once(' ') {
+                if let Ok(b) = b.parse::<PathBuf>() {
+                    return format!("{} {}", a.trim(), b.file_name().unwrap().to_str().unwrap());
+                }
+            }
+            s
+        })
 }
 
 #[derive(Default)]
