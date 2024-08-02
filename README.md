@@ -22,12 +22,12 @@ Add dependency to Cargo.toml:
 
 ```toml
 [dependencies]
-raxb = "0.3"
+raxb = "0.4"
 ```
 
 ## Development
 
-The project is using Rust, C++, JavaScript and TypeScript to provide its functionality.
+The project is using Rust, JavaScript and TypeScript to provide its functionality.
 
 To simplify project setup one can use Visual Studio Code with DevContainers feature enabled.
 

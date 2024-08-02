@@ -21,11 +21,8 @@ jobs:
     - uses: dtolnay/rust-toolchain@1.78.0
     - name: get-cmake
       uses: lukka/get-cmake@latest
-    - uses: mymindstorm/setup-emsdk@v14
     - name: Verify
-      run: |
-        cmake -version
-        emcc -v
+      run: cmake -version
     - name: Check
       run: |
         rustup component add clippy
@@ -33,53 +30,7 @@ jobs:
     - name: Build
       run: cargo build --release
     - name: Test
-      run: cargo test
-    - name: raxb validate WASM LibXml2 directories
-      working-directory: ./crates/raxb-libxml2-sys/third_party
-      run: |
-        mkdir -p ./libxml2-build
-        mkdir -p ./libxml2/m4
-    - name: raxb validate WASM LibXml2 autoreconf
-      working-directory: ./crates/raxb-libxml2-sys/third_party/libxml2
-      run: |
-        autoreconf -if -Wall
-    - name: raxb validate WASM LibXml2 directories
-      working-directory: ./crates/raxb-libxml2-sys/third_party/libxml2-build
-      run: |
-        emconfigure ../libxml2/configure --disable-shared \
-          --with-minimum --with-http=no --with-ftp=no --with-catalog=no \
-          --with-python=no --with-threads=no \
-          --with-output --with-c14n --with-zlib=no \
-          --with-schemas --with-schematron
-        emmake make
-    - name: raxb validate WASM compile
-      working-directory: ./packages/raxb-validate-wasm
-      run: |
-        mkdir -p dist
-        cp package.tmp.json dist/package.json
-        emcc -Oz -s WASM=1 -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-          -s MODULARIZE=1 \
-          -s IMPORTED_MEMORY \
-          -s ALLOW_MEMORY_GROWTH \
-          -s MAXIMUM_MEMORY=4GB \
-          -s NO_EXIT_RUNTIME=0 \
-          -s EXPORT_ES6=1 \
-          -s EXPORT_NAME=Module \
-          -Ithird_party/lz4 \
-          -I../../crates/raxb-libxml2-sys/third_party/libxml2/include \
-          -I../../crates/raxb-libxml2-sys/third_party/libxml2-build/include \
-          --closure 1 \
-          --no-entry \
-          -lembind \
-          --emit-tsd raxb-validate-wasm.d.ts \
-          ./src/lib.cpp ./third_party/lz4/lz4.cpp ../../crates/raxb-libxml2-sys/third_party/libxml2-build/.libs/libxml2.a \
-          -o dist/raxb-validate-wasm.js \
-          -s ENVIRONMENT=web
-    - name: Archive production artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: raxb-validate-wasm
-        path: ./packages/raxb-validate-wasm/dist          
+      run: cargo test 
   publish:
     if: startsWith( github.ref, 'refs/tags/v' )
     uses: ./.github/workflows/publish.yaml
