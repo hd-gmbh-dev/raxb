@@ -24,4 +24,4 @@ tracing = { workspace = true, optional = true }
 [dev-dependencies]
 anyhow.workspace = true
 tracing.workspace = true
-test-log = { workspace = true, default-features = false, features = ["trace"] }
+test-log = { workspace = true, features = ["trace"] }
