@@ -3,7 +3,10 @@ use std::str::FromStr;
 use quote::quote;
 use syn::{AngleBracketedGenericArguments, GenericArgument, PathArguments};
 
-use crate::{container::{BuiltInType, Container, EleType, FieldsSummary, Generic}, utils::trace};
+use crate::{
+    container::{BuiltInType, Container, EleType, FieldsSummary, Generic},
+    utils::trace,
+};
 
 pub fn init(fields: &FieldsSummary) -> proc_macro2::TokenStream {
     let v = fields.children.iter().map(crate::utils::create_ident);
@@ -52,7 +55,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                             #deserialize_value
                         }
                     });
- 
+
                     if !terminates {
                         let trace_end_elment = trace(quote! {
                             debug!("End element with tag '{}'", String::from_utf8_lossy(#tag));
@@ -75,7 +78,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                             #deserialize_value
                         }
                     });
-                    
+
                     if !terminates {
                         let trace_end_elment = trace(quote! {
                             debug!("End element with tag '{}'", String::from_utf8_lossy(#tag));
@@ -341,58 +344,69 @@ fn create_deserialize_value(
             let built_in_ty: BuiltInType =
                 BuiltInType::from_str(&format!("{ident}")).unwrap_or_default();
             if built_in_ty.is_string() {
-                return (quote! {
-                    let mut buffer: Vec<u8> = Vec::<u8>::new();
-                    if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                        let value = t.unescape()?.to_string();
-                        #assignment
-                    } else {
-                        let value = "".to_string();
-                        #assignment
-                    }
-                }, false);
+                return (
+                    quote! {
+                        let mut buffer: Vec<u8> = Vec::<u8>::new();
+                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                            let value = t.unescape()?.to_string();
+                            #assignment
+                        } else {
+                            let value = "".to_string();
+                            #assignment
+                        }
+                    },
+                    false,
+                );
             } else if built_in_ty.is_bool() || built_in_ty.is_number() {
                 if default {
-                    return (quote! {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                            let str_value = t.unescape()?;
-                            let value : #ty = str_value.trim().parse().unwrap_or_default();
-                            #assignment
-                        } else {
-                            let value = #ty::default();
-                            #assignment
-                        }
-                    }, false);
+                    return (
+                        quote! {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                                let str_value = t.unescape()?;
+                                let value : #ty = str_value.trim().parse().unwrap_or_default();
+                                #assignment
+                            } else {
+                                let value = #ty::default();
+                                #assignment
+                            }
+                        },
+                        false,
+                    );
                 } else {
-                    return (quote! {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                            let str_value = t.unescape()?;
-                            let value : #ty = str_value.trim().parse().unwrap_or_default();
-                            #assignment
-                        } else {
-                            let value = #ty::default();
-                            #assignment
-                        }
-                    }, false);
+                    return (
+                        quote! {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
+                                let str_value = t.unescape()?;
+                                let value : #ty = str_value.trim().parse().unwrap_or_default();
+                                #assignment
+                            }
+                        },
+                        false,
+                    );
                 }
             } else if default {
-                return (quote! {
-                    let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false).unwrap_or_default();
-                    #assignment
-                }, true);
+                return (
+                    quote! {
+                        let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false).unwrap_or_default();
+                        #assignment
+                    },
+                    true,
+                );
             } else {
-                return (quote! {
-                    let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
-                    #assignment
-                }, true);
+                return (
+                    quote! {
+                        let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
+                        #assignment
+                    },
+                    true,
+                );
             }
         } else if let Some(path) = p.path.segments.first() {
             let ident = &path.ident;
-            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
-                args, ..
-            }) = &path.arguments
+            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments { args, .. }) =
+                &path.arguments
             {
                 let args = args.iter().filter_map(|a| {
                     if let GenericArgument::Type(p) = a {
@@ -401,12 +415,15 @@ fn create_deserialize_value(
                         None
                     }
                 });
-                return (quote! {
-                    let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
-                    #assignment
-                }, true);
+                return (
+                    quote! {
+                        let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
+                        #assignment
+                    },
+                    true,
+                );
             }
         }
-}
+    }
     (quote! {}, true)
 }

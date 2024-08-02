@@ -14,7 +14,6 @@ struct G {
     pub d: String,
 }
 
-
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(tns(b"ns1", b"https://local.dev/example"))]
 enum H {
@@ -53,11 +52,14 @@ fn test_enum_child_with_ns_serde() -> anyhow::Result<()> {
         </ns1:h>
     </ns1:j>"#;
     let v1: J = raxb::de::from_str(test_xml1)?;
-    let r1 = J { h: H::F(F { a: "A".to_string() }), ..Default::default() };
+    let r1 = J {
+        h: H::F(F { a: "A".to_string() }),
+        ..Default::default()
+    };
     assert_eq!(v1, r1);
 
     // println!("{}", raxb::ser::to_string(&H::F(F { a: "A".to_string() })).unwrap());
-    
+
     Ok(())
 }
 

@@ -23,5 +23,5 @@ pub mod value;
 
 pub use quick_xml;
 
-#[cfg(feature="trace")]
+#[cfg(feature = "trace")]
 pub use tracing;

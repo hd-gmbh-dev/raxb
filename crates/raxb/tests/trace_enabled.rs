@@ -37,6 +37,12 @@ enum F {
 fn test_enums_serde() -> anyhow::Result<()> {
     let test_xml1 = r#"<a><d>A</d><c>hello</c></a>"#;
     let v1: E = raxb::de::from_str(test_xml1)?;
-    assert_eq!(v1, E::A(A { d: "A".to_string(), c: "hello".to_string() }));
+    assert_eq!(
+        v1,
+        E::A(A {
+            d: "A".to_string(),
+            c: "hello".to_string()
+        })
+    );
     Ok(())
 }

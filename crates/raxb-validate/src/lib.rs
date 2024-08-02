@@ -285,14 +285,16 @@ pub fn find_root_xsi_schema_location(xml: &[u8]) -> Result<String, ValidationErr
         }
         buf.clear();
     }
-    schema_location.ok_or(ValidationError::NoSchemaLocation).map(|s| {
-        if let Some((a,b)) = s.split_once(" ") {
-            if let Ok(b) = b.parse::<PathBuf>() {
-                return format!("{} {}", a.trim(), b.file_name().unwrap().to_str().unwrap());
+    schema_location
+        .ok_or(ValidationError::NoSchemaLocation)
+        .map(|s| {
+            if let Some((a, b)) = s.split_once(' ') {
+                if let Ok(b) = b.parse::<PathBuf>() {
+                    return format!("{} {}", a.trim(), b.file_name().unwrap().to_str().unwrap());
+                }
             }
-        }
-        s
-    })
+            s
+        })
 }
 
 #[derive(Default)]

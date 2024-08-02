@@ -91,23 +91,25 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
         .join("|");
     let enum_err = LitByteStr::new(enum_err.as_bytes(), Span::call_site());
     let (impl_generics, type_generics, where_clause) = container.original.generics.split_for_impl();
-    let trace_event = |event_type: &'static str| trace(quote! {
-        if tag.is_empty() {
-            if target_ns.is_empty() {
-                debug!("{} enum '{}'", #event_type, #ident_str);
+    let trace_event = |event_type: &'static str| {
+        trace(quote! {
+            if tag.is_empty() {
+                if target_ns.is_empty() {
+                    debug!("{} enum '{}'", #event_type, #ident_str);
+                } else {
+                    debug!("{} enum '{}' with namespace '{}'", #event_type, #ident_str, std::str::from_utf8(target_ns).unwrap());
+                }
             } else {
-                debug!("{} enum '{}' with namespace '{}'", #event_type, #ident_str, std::str::from_utf8(target_ns).unwrap());
+                if target_ns.is_empty() {
+                    debug!("{} enum '{}' with tag '{}'", #event_type, #ident_str, std::str::from_utf8(tag).unwrap());
+                } else {
+                    debug!("{} enum '{}' with tag '{}' and namespace '{}'", #event_type, #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(target_ns).unwrap());
+                }
             }
-        } else {
-            if target_ns.is_empty() {
-                debug!("{} enum '{}' with tag '{}'", #event_type, #ident_str, std::str::from_utf8(tag).unwrap());
-            } else {
-                debug!("{} enum '{}' with tag '{}' and namespace '{}'", #event_type, #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(target_ns).unwrap());
-            }
-        }
-    });
+        })
+    };
     let trace_enter_enum = trace_event("Enter");
-    let trace_leave_enum = trace_event("Leave");    
+    let trace_leave_enum = trace_event("Leave");
     quote! {
         #[doc(hidden)]
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]

@@ -62,7 +62,6 @@ pub fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
     }
 }
 
-
 pub fn trace(content: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     quote! {
         #[cfg(feature = "trace")]

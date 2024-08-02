@@ -13,7 +13,7 @@ impl PartialEq for ConstStr {
         if !self.output_value.is_empty() && !other.output_value.is_empty() {
             return self.output_value.eq(other.output_value);
         }
-        return true;
+        true
     }
 }
 
