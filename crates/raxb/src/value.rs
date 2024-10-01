@@ -8,6 +8,15 @@ pub struct ConstStr {
     output_value: &'static str,
 }
 
+impl From<&'static str> for ConstStr {
+    fn from(value: &'static str) -> Self {
+        Self {
+            input_value: String::default(),
+            output_value: value,
+        }
+    }
+}
+
 impl PartialEq for ConstStr {
     fn eq(&self, other: &Self) -> bool {
         if !self.output_value.is_empty() && !other.output_value.is_empty() {
