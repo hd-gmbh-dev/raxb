@@ -13,6 +13,7 @@
 )]
 */
 
+pub use raxb_derive::XmlBorrow;
 pub use raxb_derive::XmlDeserialize;
 pub use raxb_derive::XmlSerialize;
 
@@ -20,6 +21,7 @@ pub mod de;
 pub mod ser;
 pub mod ty;
 pub mod value;
+pub mod zde;
 
 pub use quick_xml;
 

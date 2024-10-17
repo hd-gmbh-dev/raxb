@@ -12,6 +12,7 @@ pub enum BuiltInType {
     #[default]
     Unknown,
     String,
+    XmlValue,
     bool,
     f32,
     f64,
@@ -191,7 +192,7 @@ impl<'a> StructField<'a> {
         let mut name = Option::<syn::LitByteStr>::None;
         let mut ns = Option::<syn::LitByteStr>::None;
         let mut value = Option::<syn::LitStr>::None;
-        let mut ty = Option::<EleType>::None;
+        let mut ty = Some(EleType::Text);
         let mut default = false;
         let generic = get_generics(&f.ty);
         for meta_item in f.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
