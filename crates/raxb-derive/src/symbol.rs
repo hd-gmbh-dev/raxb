@@ -13,6 +13,7 @@ pub const DEFAULT: Symbol = Symbol("default");
 pub const TYPE: Symbol = Symbol("ty");
 pub const TNS: Symbol = Symbol("tns");
 pub const NS: Symbol = Symbol("ns");
+pub const PATH: Symbol = Symbol("path");
 
 impl PartialEq<Symbol> for Ident {
     fn eq(&self, other: &Symbol) -> bool {

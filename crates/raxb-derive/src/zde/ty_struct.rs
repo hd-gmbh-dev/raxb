@@ -1,5 +1,5 @@
 use quote::quote;
-use syn::{LitByteStr, Type};
+use syn::{ExprArray, Ident, LitByteStr, Type};
 
 use crate::{
     container::{Container, EleType, Generic, StructField},
@@ -21,9 +21,14 @@ fn get_text_value_type(original_type: &Type) -> TextValueType {
     }
 }
 
+enum TextPathValue<'a> {
+    String(String),
+    Expr(&'a ExprArray)
+}
+
 struct TextPath<'a> {
     ident: &'a syn::Ident,
-    ident_str: String,
+    ident_value: TextPathValue<'a>,
     path_ident: syn::Ident,
     ty: TextValueType,
     sf: &'a StructField<'a>,
@@ -46,9 +51,15 @@ fn filter_text_paths<'a>(container: &'a Container) -> Vec<TextPath<'a>> {
                     let ident_str = ident.to_string();
                     let path_ident: syn::Ident =
                         syn::parse_str(&format!("{}_path", ident_str)).unwrap();
+                    let ident_value = if let Some(path) = &f.path {
+                        TextPathValue::Expr(path)
+                    } else {
+                        TextPathValue::String(ident_str)
+                    };
+
                     return Some(TextPath {
                         ident,
-                        ident_str,
+                        ident_value,
                         path_ident,
                         ty,
                         sf: f,
@@ -58,6 +69,34 @@ fn filter_text_paths<'a>(container: &'a Container) -> Vec<TextPath<'a>> {
             None
         })
         .collect::<Vec<_>>()
+}
+
+fn get_assignment(ident: &Ident, generic: &Generic<'_>, val: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    match generic {
+        Generic::Vec(_) => quote! {
+            #ident.push(#val);
+        },
+        Generic::Opt(_) => quote! {
+            #ident = Some(#val);
+        },
+        Generic::None => quote! {
+            #ident = Some(#val);
+        },
+    }
+}
+
+fn get_first_ty_segment<'a>(sf: &StructField<'a>) -> Option<&'a Ident> {
+    let ty = match sf.generic {
+        Generic::Vec(ty) => ty,
+        Generic::Opt(ty) => ty,
+        Generic::None => &sf.original.ty,
+    };
+    if let Type::Path(p) = ty {
+        if let Some(ty) = p.path.segments.first() {
+            return Some(&ty.ident);
+        }
+    }
+    None
 }
 
 pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
@@ -74,15 +113,17 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             let ty = &f.original.ty;
             let ident = &f.original.ident;
             if let Some(ident) = ident.as_ref() {
-                if matches!(f.generic, Generic::Vec(_)) {
-                    return Some(quote! {
-                        let mut #ident : Vec<#ty> = vec![];
-                    });
-                } else {
-                    return Some(quote! {
+                return Some(match f.generic {
+                    Generic::Vec(_) => quote! {
+                        let mut #ident : #ty = vec![];
+                    },
+                    Generic::Opt(_) => quote! {
+                        let mut #ident : #ty = None;
+                    },
+                    Generic::None => quote! {
                         let mut #ident : Option<#ty> = None;
-                    });
-                }
+                    },
+                });
             }
             None
         })
@@ -92,9 +133,13 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
         .iter()
         .map(|p| {
             let path_ident = &p.path_ident;
-            let ident_str = &p.ident_str;
-            quote! {
-                let #path_ident = &[#ident_str][..];
+            match &p.ident_value {
+                TextPathValue::String(ident_str) => quote! {
+                    let #path_ident = &[#ident_str][..];
+                },
+                TextPathValue::Expr(array) => quote! {
+                    let #path_ident = &#array[..];
+                },
             }
         })
         .collect::<Vec<_>>();
@@ -104,23 +149,84 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             let ident = f.ident;
             let path_ident = &f.path_ident;
             let val = match f.ty {
-                TextValueType::XmlValue => quote! { Some(bytes_text.unescape()?) },
-                TextValueType::String => quote! { Some(bytes_text.unescape()?) },
-                TextValueType::Parse => quote! { Some(bytes_text.unescape()?.parse()?) },
+                TextValueType::XmlValue => quote! { bytes_text.unescape()? },
+                TextValueType::String =>   quote! { bytes_text.unescape()? },
+                TextValueType::Parse =>    quote! { bytes_text.unescape()?.parse()? },
             };
-            let assignment = match f.sf.generic {
-                Generic::Vec(_) => quote! {
-                    #ident.push(#val);
-                },
-                Generic::Opt(_) => quote! {
-                    #ident = Some(#val);
-                },
-                Generic::None => quote! {
-                    #ident = #val;
-                },
-            };
+            let assignment = get_assignment(ident, &f.sf.generic, val);
             quote! {
                 if p == #path_ident {
+                    #assignment
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+    let child_branches = container
+        .struct_fields
+        .iter()
+        .filter(|f| matches!(f.ty, EleType::Child) && f.original.ident.is_some())
+        .filter_map(|f| {
+            let ident = f.original.ident.as_ref().unwrap();
+            let name = f.name.clone().unwrap_or_else(|| syn::parse_str(&format!("b\"{}\"", ident.to_string())).unwrap());
+            if  let Some(ty) = get_first_ty_segment(f) {
+                let val = quote!{
+                    #ty::xml_borrow(reader, Some(bytes_start))?
+                };
+                let assignment = get_assignment(ident, &f.generic, val);
+                return Some(quote! {
+                    #name => {
+                        #assignment
+                    }
+                });
+            }
+            None
+        })
+        .collect::<Vec<_>>();
+    let sfc_branches = container
+        .struct_fields
+        .iter()
+        .filter(|f| matches!(f.ty, EleType::SelfClosedChild) && f.original.ident.is_some())
+        .filter_map(|f| {
+            let ident = f.original.ident.as_ref().unwrap();
+            let name = f.name.clone().unwrap_or_else(|| syn::parse_str(&format!("b\"{}\"", ident.to_string())).unwrap());
+            if  let Some(ty) = get_first_ty_segment(f) {
+                let t = get_built_in_type(&f.original.ty);
+                let val = if t.is_bool() {
+                    quote!{
+                        true
+                    }
+                } else {
+                    quote!{
+                        #ty::xml_borrow(reader, Some(bytes_start))?
+                    }
+                };
+                let assignment = get_assignment(ident, &f.generic, val);
+                return Some(quote! {
+                    #name => {
+                        #assignment
+                    }
+                });
+            }
+            None
+        })
+        .collect::<Vec<_>>();
+    let attr_branches = container
+        .struct_fields
+        .iter()
+        .filter(|f| matches!(f.ty, EleType::Attr) && f.original.ident.is_some())
+        .map(|f| {
+            let ident = f.original.ident.as_ref().unwrap();
+            let name = f.name.clone().unwrap_or_else(|| syn::parse_str(&format!("b\"{}\"", ident.to_string())).unwrap());
+            let ty = get_text_value_type(&f.original.ty);
+            let val = match ty {
+                TextValueType::XmlValue => quote! { XmlValue::Owned(attr.to_string()) },
+                TextValueType::String => quote! { attr.to_string() },
+                TextValueType::Parse => quote! { attr.to_string().parse()? },
+            };
+            let assignment = get_assignment(ident, &f.generic, val);
+            quote! {
+                #name => {
+                    let attr = attr.to_owned().decode_and_unescape_value(reader.decoder())?;
                     #assignment
                 }
             }
@@ -132,12 +238,25 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
         .filter_map(|f| {
             let ident = &f.original.ident;
             if let Some(ident) = ident.as_ref() {
-                if matches!(f.generic, Generic::Opt(_)) {}
+                if f.default {
+                    return Some(quote! {
+                        #ident: #ident.unwrap_or_default()
+                    })
+                }
                 if matches!(f.generic, Generic::None) {
                     let bident: LitByteStr =
                         syn::parse_str(&format!("b\"{}\"", ident.to_string())).unwrap();
+                    let error = if matches!(f.ty, EleType::Attr) {
+                        quote! {
+                            XmlBorrowError::MissingAttribute(_raxb::ty::S(#bident))
+                        }
+                    } else {
+                        quote! {
+                            XmlBorrowError::MissingElement(_raxb::ty::S(#bident))
+                        }
+                    };
                     return Some(quote! {
-                        #ident: #ident.ok_or(XmlBorrowError::MissingElement(_raxb::ty::S(#bident)))?
+                        #ident: #ident.ok_or_else(|| #error)?
                     });
                 }
                 return Some(quote! {
@@ -172,12 +291,33 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     #(#fields_init)*
                     #(#paths_init)*
 
+                    if let Some(bytes_start) = bytes_start.as_ref() {
+                        let attrs = bytes_start.attributes();
+                        for attr in attrs {
+                            let attr = attr?;
+                            match attr.key.local_name().as_ref() {
+                                #(#attr_branches,)*
+                                _ => {}
+                            }
+                        }
+                    }
                     let mut p = Pointer::new();
                     loop {
                         let ev = reader.read_event()?;
                         match ev {
                             Event::Start(bytes_start) => {
-                                p.visit(bytes_start);
+                                match bytes_start.local_name().as_ref() {
+                                    #(#child_branches,)*
+                                    _ => {
+                                        p.visit(bytes_start);
+                                    }
+                                }
+                            },
+                            Event::Empty(bytes_start) => {
+                                match bytes_start.local_name().as_ref() {
+                                    #(#sfc_branches,)*
+                                    _ => {}
+                                }
                             },
                             Event::Text(bytes_text) => {
                                 #(#text_branches)*
@@ -224,12 +364,17 @@ mod tests {
     fn test_fields_expansion() -> anyhow::Result<()> {
         let code = r#"
         pub struct A<'a> {
-            #[xml(ty = "sfc")]
+            #[xml(ty = "attr")]
+            pub name: XmlValue<'a>,
+            #[xml(default, ty = "sfc")]
             pub b: bool,
             pub b2: bool,
             pub f1: Vec<i32>,
+            #[xml(path = ["c", "x", "y"])]
             pub c: XmlValue<'a>,
             pub d: XmlValue<'a>,
+            #[xml(ty = "child")]
+            pub e: Option<D<'a>>,
         }
         "#;
         let t =

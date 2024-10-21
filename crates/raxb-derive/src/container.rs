@@ -184,6 +184,7 @@ pub struct StructField<'a> {
     pub generic: Generic<'a>,
     pub ns: Option<syn::LitByteStr>,
     pub value: Option<syn::LitStr>,
+    pub path: Option<syn::ExprArray>,
     pub default: bool,
 }
 
@@ -192,6 +193,7 @@ impl<'a> StructField<'a> {
         let mut name = Option::<syn::LitByteStr>::None;
         let mut ns = Option::<syn::LitByteStr>::None;
         let mut value = Option::<syn::LitStr>::None;
+        let mut path = Option::<syn::ExprArray>::None;
         let mut ty = Some(EleType::Text);
         let mut default = false;
         let generic = get_generics(&f.ty);
@@ -227,9 +229,14 @@ impl<'a> StructField<'a> {
                         ty = Some(t);
                     }
                 }
+                NameValue(m) if m.path == PATH => {
+                    if let Ok(array) = get_expr_array(&m.value) {
+                        path = Some(array.to_owned());
+                    }
+                }
                 Path(p) if p == DEFAULT => {
                     default = true;
-                }
+                }                
                 _ => panic!("unexpected"),
             }
         }
@@ -242,6 +249,7 @@ impl<'a> StructField<'a> {
                 ns,
                 value,
                 default,
+                path,
             })
         } else if f.ident.is_none() {
             Some(StructField {
@@ -252,6 +260,7 @@ impl<'a> StructField<'a> {
                 ns,
                 value,
                 default,
+                path,
             })
         } else {
             None
@@ -382,6 +391,13 @@ fn get_lit_str(lit: &syn::Expr) -> Result<&syn::LitStr, ()> {
         if let syn::Lit::Str(l) = &lit.lit {
             return Ok(l);
         }
+    }
+    Err(())
+}
+
+fn get_expr_array(expr: &syn::Expr) -> Result<&syn::ExprArray, ()> {
+    if let syn::Expr::Array(array) = expr {
+        return Ok(array);
     }
     Err(())
 }
