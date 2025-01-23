@@ -436,7 +436,7 @@ pub enum Generic<'a> {
     None,
 }
 
-impl<'a> Generic<'a> {
+impl Generic<'_> {
     pub fn get_opt(&self) -> Option<&syn::Type> {
         match self {
             Generic::Opt(v) => Some(v),

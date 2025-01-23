@@ -116,7 +116,7 @@ fn xml_content_type(headers: &HeaderMap) -> bool {
     };
 
     let is_xml_content_type = mime.type_() == "application"
-        && (mime.subtype() == "xml" || mime.suffix().map_or(false, |name| name == "xml"));
+        && (mime.subtype() == "xml" || mime.suffix().is_some_and(|name| name == "xml"));
 
     is_xml_content_type
 }
