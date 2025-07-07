@@ -62,9 +62,11 @@ pub fn create_root_impl(container: &Container) -> proc_macro2::TokenStream {
     }
 }
 
-pub fn trace(content: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+pub fn trace(
+    #[allow(unused_variables)] content: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    #[cfg(feature = "trace")]
     quote! {
-        #[cfg(feature = "trace")]
         {
             #[allow(unused_extern_crates)]
             extern crate raxb as _raxb;
@@ -74,4 +76,6 @@ pub fn trace(content: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
             #content
         }
     }
+    #[cfg(not(feature = "trace"))]
+    quote! {}
 }

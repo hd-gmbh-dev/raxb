@@ -110,6 +110,17 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
     };
     let trace_enter_enum = trace_event("Enter");
     let trace_leave_enum = trace_event("Leave");
+    let unexpected_event = if cfg!(feature = "trace") {
+        quote! {
+            ev => {
+                _raxb::tracing::warn!("Unexpected Event: {ev:#?}");
+            }
+        }
+    } else {
+        quote! {
+            _ => {}
+        }
+    };
     quote! {
         #[doc(hidden)]
         #[allow(non_upper_case_globals, unused_attributes, unused_qualifications)]
@@ -194,12 +205,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                                     (_, Event::Eof) => {
                                         break;
                                     }
-                                    #[cfg(not(feature="trace"))]
-                                    _ => {},
-                                    #[cfg(feature="trace")]
-                                    ev => {
-                                        _raxb::tracing::warn!("Unexpected Event: {ev:#?}");
-                                    },
+                                    #unexpected_event,
                                 }
                             }
                         }

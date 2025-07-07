@@ -116,16 +116,22 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     let has_qualified_children_terminate = !qualified_child_terminate_branches.is_empty();
     let qualified_child_terminate_branch = if has_qualified_children_terminate {
         let qualified_child_terminate_branches = qualified_child_terminate_branches.into_iter();
+        let unexpected_end_event = if cfg!(feature = "trace") {
+            quote! {
+                ev => {
+                    _raxb::tracing::warn!("Unexpected End Event: '{}' with namespace: '{}'", String::from_utf8_lossy(ev), String::from_utf8_lossy(ns.as_ref()));
+                }
+            }
+        } else {
+            quote! {
+                _ => {}
+            }
+        };
         quote! {
             (ResolveResult::Bound(ns), Event::End(ev)) => {
                 match ev.local_name().as_ref() {
                     #(#qualified_child_terminate_branches,)*
-                    #[cfg(not(feature="trace"))]
-                    _ => {},
-                    #[cfg(feature="trace")]
-                    ev => {
-                        _raxb::tracing::warn!("Unexpected End Event: '{}' with namespace: '{}'", String::from_utf8_lossy(ev), String::from_utf8_lossy(ns.as_ref()));
-                    },
+                    #unexpected_end_event,
                 }
             },
         }
@@ -136,13 +142,19 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     let has_qualified_children = !qualified_child_branches.is_empty();
     let qualified_child_branch = if has_qualified_children {
         let qualified_child_branches = qualified_child_branches.into_iter();
+        let unexpected_start_event = if cfg!(feature = "trace") {
+            quote! {
+                _raxb::tracing::warn!("Unexpected Start Event: {ev:#?}");
+            }
+        } else {
+            quote! {}
+        };
         quote! {
             (ResolveResult::Bound(ns), Event::Start(ev)) => {
                 match ev.local_name().as_ref() {
                     #(#qualified_child_branches,)*
                     _ => {
-                        #[cfg(feature="trace")]
-                        _raxb::tracing::warn!("Unexpected Start Event: {ev:#?}");
+                        #unexpected_start_event
                         let mut buffer: Vec<u8> = Vec::<u8>::new();
                         reader.read_to_end_into(ev.name(), &mut buffer)?;
                     },
@@ -171,16 +183,22 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     let has_unqualified_children_terminate = !unqualified_child_terminate_branches.is_empty();
     let unqualified_child_terminate_branch = if has_unqualified_children_terminate {
         let unqualified_child_terminate_branches = unqualified_child_terminate_branches.into_iter();
+        let unexpected_end_event = if cfg!(feature = "trace") {
+            quote! {
+                ev => {
+                    _raxb::tracing::warn!("Unexpected End Event: '{}'", String::from_utf8_lossy(ev));
+                }
+            }
+        } else {
+            quote! {
+                _ => {}
+            }
+        };
         quote! {
             (ResolveResult::Unbound, Event::End(ev)) => {
                 match ev.local_name().as_ref() {
                     #(#unqualified_child_terminate_branches,)*
-                    #[cfg(not(feature="trace"))]
-                    _ => {},
-                    #[cfg(feature="trace")]
-                    ev => {
-                        _raxb::tracing::warn!("Unexpected End Event: '{}'", String::from_utf8_lossy(ev));
-                    },
+                    #unexpected_end_event,
                 }
             },
         }
@@ -191,13 +209,19 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     let has_unqualified_children = !unqualified_child_branches.is_empty();
     let unqualified_child_branch = if has_unqualified_children {
         let unqualified_child_branches = unqualified_child_branches.into_iter();
+        let unexpected_start_event = if cfg!(feature = "trace") {
+            quote! {
+                _raxb::tracing::warn!("Unexpected Start Event: {ev:#?}");
+            }
+        } else {
+            quote! {}
+        };
         quote! {
             (ResolveResult::Unbound, Event::Start(ev)) => {
                 match ev.local_name().as_ref() {
                     #(#unqualified_child_branches,)*
                     _ => {
-                        #[cfg(feature="trace")]
-                        _raxb::tracing::warn!("Unexpected Start Event: {ev:#?}");
+                        #unexpected_start_event
                         let mut buffer: Vec<u8> = Vec::<u8>::new();
                         reader.read_to_end_into(ev.name(), &mut buffer)?;
                     },
@@ -251,6 +275,17 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         || has_qualified_children
         || has_qualified_sfcs
     {
+        let unexpected_event = if cfg!(feature = "trace") {
+            quote! {
+                ev => {
+                    _raxb::tracing::warn!("Unexpected Event: {ev:#?}");
+                }
+            }
+        } else {
+            quote! {
+                _ => {}
+            }
+        };
         quote! {
             let mut buf = Vec::<u8>::new();
 
@@ -266,12 +301,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                     (_, Event::Eof) => {
                         break;
                     },
-                    #[cfg(not(feature="trace"))]
-                    _ => {},
-                    #[cfg(feature="trace")]
-                    ev => {
-                        _raxb::tracing::warn!("Unexpected Event: {ev:#?}");
-                    },
+                    #unexpected_event,
                 }
             }
         }
