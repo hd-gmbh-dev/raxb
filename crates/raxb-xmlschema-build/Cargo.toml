@@ -14,7 +14,7 @@ keywords.workspace = true
 
 [features]
 default = []
-trace = []
+trace = ["raxb/trace", "raxb-derive/trace"]
 
 [dependencies]
 raxb.workspace = true
