@@ -19,7 +19,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    - uses: dtolnay/rust-toolchain@1.78.0
+    - uses: dtolnay/rust-toolchain@1.84.0
     - name: get-cmake
       uses: lukka/get-cmake@latest
     - name: Publish to crates.io.
@@ -32,7 +32,7 @@ jobs:
         cargo publish --token ${CRATES_TOKEN} -p raxb-validate
         cargo publish --token ${CRATES_TOKEN} -p raxb-axum
       env:
-        CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}    
+        CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
   release:
       name: Release
       runs-on: ubuntu-latest
