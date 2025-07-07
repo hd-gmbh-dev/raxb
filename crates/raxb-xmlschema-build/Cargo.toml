@@ -14,11 +14,10 @@ keywords.workspace = true
 
 [features]
 default = []
-trace = ["raxb/trace", "raxb-derive/trace"]
+trace = ["raxb/trace"]
 
 [dependencies]
 raxb.workspace = true
-raxb-derive.workspace = true
 raxb-xmlschema.workspace = true
 thiserror.workspace = true
 byteorder.workspace = true

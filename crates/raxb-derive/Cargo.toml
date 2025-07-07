@@ -17,7 +17,7 @@ proc-macro = true
 
 [features]
 default = []
-trace = ["dep:tracing"]
+trace = []
 
 [dependencies]
 darling = "0.20"
@@ -32,4 +32,3 @@ quote = "1.0"
 proc-macro2 = "1.0"
 quick-xml.workspace = true
 strum = { version = "0.26", features = ["derive"] }
-tracing = { workspace = true, optional = true }
