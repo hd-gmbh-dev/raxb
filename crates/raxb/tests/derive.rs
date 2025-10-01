@@ -204,3 +204,34 @@ fn test_deserialize_with_derive_macro_2() -> anyhow::Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn test_deserialize_empty_tag() -> anyhow::Result<()> {
+    let xml = r#"
+        <f>
+            <j>text</j>
+        </f>
+        "#;
+
+    let f = raxb::de::from_str::<F>(xml)?;
+    assert_eq!(f.j, "text");
+
+    let xml = r#"
+        <f>
+            <j></j>
+        </f>
+        "#;
+
+    let f = raxb::de::from_str::<F>(xml)?;
+    assert_eq!(f.j, "");
+
+    let xml = r#"
+        <f>
+            <j/>
+        </f>
+        "#;
+
+    let f = raxb::de::from_str::<F>(xml)?;
+    assert_eq!(f.j, "");
+    Ok(())
+}
