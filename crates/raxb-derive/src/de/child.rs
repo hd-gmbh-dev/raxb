@@ -404,7 +404,7 @@ fn create_deserialize_value(
                         }
                     },
                     Some(quote! {
-                        let value = "".to_string();
+                        let value = String::new();
                         #assignment
                     }),
                     false,
@@ -455,7 +455,10 @@ fn create_deserialize_value(
                         let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
                         #assignment
                     },
-                    None,
+                    Some(quote! {
+                        let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), true)?;
+                        #assignment
+                    }),
                     true,
                 );
             }

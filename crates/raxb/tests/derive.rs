@@ -207,31 +207,94 @@ fn test_deserialize_with_derive_macro_2() -> anyhow::Result<()> {
 
 #[test]
 fn test_deserialize_empty_tag() -> anyhow::Result<()> {
+    #[derive(Default, XmlDeserialize)]
+    struct Text {
+        #[raxb(ty = "text", default)]
+        t: String,
+    }
+    #[derive(XmlDeserialize)]
+    #[raxb(root = b"f")]
+    struct F {
+        #[raxb(name = b"j", ty = "child")]
+        j: String,
+        #[raxb(name = b"t", ty = "child")]
+        t: Text,
+        #[raxb(name = b"s", ty = "child")]
+        s: Option<String>,
+    }
     let xml = r#"
         <f>
             <j>text</j>
+            <t>text</t>
         </f>
         "#;
 
     let f = raxb::de::from_str::<F>(xml)?;
     assert_eq!(f.j, "text");
+    assert_eq!(f.t.t, "text");
+    assert_eq!(f.s, None);
+
+    let xml = r#"
+        <f>
+            <j>text</j>
+            <t>text</t>
+            <s>text</s>
+        </f>
+        "#;
+
+    let f = raxb::de::from_str::<F>(xml)?;
+    assert_eq!(f.j, "text");
+    assert_eq!(f.t.t, "text");
+    assert_eq!(f.s.as_deref(), Some("text"));
 
     let xml = r#"
         <f>
             <j></j>
+            <t></t>
         </f>
         "#;
 
     let f = raxb::de::from_str::<F>(xml)?;
     assert_eq!(f.j, "");
+    assert_eq!(f.t.t, "");
+    assert_eq!(f.s, None);
+
+    let xml = r#"
+        <f>
+            <j></j>
+            <t></t>
+            <s>text</s>
+        </f>
+        "#;
+
+    let f = raxb::de::from_str::<F>(xml)?;
+    assert_eq!(f.j, "");
+    assert_eq!(f.t.t, "");
+    assert_eq!(f.s.as_deref(), Some("text"));
 
     let xml = r#"
         <f>
             <j/>
+            <t/>
         </f>
         "#;
 
     let f = raxb::de::from_str::<F>(xml)?;
     assert_eq!(f.j, "");
+    assert_eq!(f.t.t, "");
+    assert_eq!(f.s, None);
+
+    let xml = r#"
+        <f>
+            <j/>
+            <t/>
+            <s>text</s>
+        </f>
+        "#;
+
+    let f = raxb::de::from_str::<F>(xml)?;
+    assert_eq!(f.j, "");
+    assert_eq!(f.t.t, "");
+    assert_eq!(f.s.as_deref(), Some("text"));
     Ok(())
 }
