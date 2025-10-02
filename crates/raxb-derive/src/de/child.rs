@@ -44,7 +44,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             };
             if matches!(f.ty, EleType::Child) {
                 if is_qualified {
-                    let (deserialize_value, terminates) =
+                    let (deserialize_value, deserialize_value_sfc, terminates) =
                         create_deserialize_value(tag, ty, ident, is_array, f.default);
                     let trace_start_elment = trace(quote! {
                         debug!("Start element with tag '{}'", String::from_utf8_lossy(#tag));
@@ -55,6 +55,13 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                             #deserialize_value
                         }
                     });
+                    if let Some(deserialize_value_sfc) = deserialize_value_sfc {
+                        qualified_sfc_branches.push(quote! {
+                            #tag => {
+                                #deserialize_value_sfc
+                            }
+                        });
+                    }
 
                     if !terminates {
                         let trace_end_elment = trace(quote! {
@@ -70,7 +77,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                     let trace_start_elment = trace(quote! {
                         debug!("Start element with tag '{}'", String::from_utf8_lossy(#tag));
                     });
-                    let (deserialize_value, terminates) =
+                    let (deserialize_value, deserialize_value_sfc, terminates) =
                         create_deserialize_value(tag, ty, ident, is_array, f.default);
                     unqualified_child_branches.push(quote! {
                         #tag => {
@@ -78,6 +85,13 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
                             #deserialize_value
                         }
                     });
+                    if let Some(deserialize_value_sfc) = deserialize_value_sfc {
+                        unqualified_sfc_branches.push(quote! {
+                            #tag => {
+                                #deserialize_value_sfc
+                            }
+                        });
+                    }
 
                     if !terminates {
                         let trace_end_elment = trace(quote! {
@@ -359,7 +373,11 @@ fn create_deserialize_value(
     ident: &syn::Ident,
     is_array: bool,
     default: bool,
-) -> (proc_macro2::TokenStream, bool) {
+) -> (
+    proc_macro2::TokenStream,
+    Option<proc_macro2::TokenStream>,
+    bool,
+) {
     let assignment = if is_array {
         quote! {
             #ident.push(value);
@@ -385,6 +403,10 @@ fn create_deserialize_value(
                             #assignment
                         }
                     },
+                    Some(quote! {
+                        let value = String::new();
+                        #assignment
+                    }),
                     false,
                 );
             } else if built_in_ty.is_bool() || built_in_ty.is_number() {
@@ -401,6 +423,7 @@ fn create_deserialize_value(
                                 #assignment
                             }
                         },
+                        None,
                         false,
                     );
                 } else {
@@ -413,6 +436,7 @@ fn create_deserialize_value(
                                 #assignment
                             }
                         },
+                        None,
                         false,
                     );
                 }
@@ -422,6 +446,7 @@ fn create_deserialize_value(
                         let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false).unwrap_or_default();
                         #assignment
                     },
+                    None,
                     true,
                 );
             } else {
@@ -430,6 +455,10 @@ fn create_deserialize_value(
                         let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
                         #assignment
                     },
+                    Some(quote! {
+                        let value = #ty::xml_deserialize(reader, target_ns, #tag, ev.attributes(), true)?;
+                        #assignment
+                    }),
                     true,
                 );
             }
@@ -450,10 +479,11 @@ fn create_deserialize_value(
                         let value = #ident::<#(#args,)*>::xml_deserialize(reader, target_ns, #tag, ev.attributes(), false)?;
                         #assignment
                     },
+                    None,
                     true,
                 );
             }
         }
     }
-    (quote! {}, true)
+    (quote! {}, None, true)
 }
