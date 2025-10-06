@@ -20,15 +20,10 @@ default = []
 trace = []
 
 [dependencies]
-darling = "0.20"
+darling = { version = "0.20", default-features = false }
 heck = "0.5"
-syn = { version = "2", features = [
-    "full",
-    "extra-traits",
-    "visit",
-    "visit-mut",
-] }
-quote = "1.0"
-proc-macro2 = "1.0"
+syn = { version = "2", default-features = false }
+quote = { version = "1.0", default-features = false }
+proc-macro2 = { version = "1.0", default-features = false }
 quick-xml.workspace = true
-strum = { version = "0.26", features = ["derive"] }
+strum = { version = "0.26", features = ["derive"], default-features = false }
