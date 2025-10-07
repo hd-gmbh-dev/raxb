@@ -18,6 +18,6 @@ trace = ["raxb/trace"]
 
 [dependencies]
 raxb.workspace = true
-raxb-xmlschema.workspace = true
+raxb-xmlschema = { workspace = true, features = ["writer"] }
 thiserror.workspace = true
 byteorder.workspace = true

@@ -385,7 +385,7 @@ fn get_lit_str(lit: &syn::Expr) -> Result<&syn::LitStr, ()> {
     Err(())
 }
 
-fn get_generics(t: &syn::Type) -> Generic {
+fn get_generics(t: &syn::Type) -> Generic<'_> {
     match t {
         syn::Type::Path(p) => {
             let path = &p.path;
