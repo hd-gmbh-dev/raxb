@@ -4,7 +4,7 @@ members = ["crates/*"]
 
 [workspace.package]
 edition = "2021"
-version = "0.4.9"
+version = "0.4.10"
 description = """
 The Rust Architecture for XML Binding
 """
@@ -16,13 +16,13 @@ categories = []
 keywords = []
 
 [workspace.dependencies]
-raxb = { version = "0.4.9", path = "crates/raxb" }
-raxb-libxml2-sys = { version = "0.4.9", path = "crates/raxb-libxml2-sys" }
-raxb-derive = { version = "0.4.9", path = "crates/raxb-derive" }
-raxb-validate = { version = "0.4.9", path = "crates/raxb-validate" }
-raxb-xmlschema = { version = "0.4.9", path = "crates/raxb-xmlschema" , default-features = false }
-raxb-xmlschema-build = { version = "0.4.9", path = "crates/raxb-xmlschema-build" }
-raxb-axum = { version = "0.4.9", path = "crates/raxb-axum" }
+raxb = { version = "0.4.10", path = "crates/raxb" }
+raxb-libxml2-sys = { version = "0.4.10", path = "crates/raxb-libxml2-sys" }
+raxb-derive = { version = "0.4.10", path = "crates/raxb-derive" }
+raxb-validate = { version = "0.4.10", path = "crates/raxb-validate" }
+raxb-xmlschema = { version = "0.4.10", path = "crates/raxb-xmlschema" , default-features = false }
+raxb-xmlschema-build = { version = "0.4.10", path = "crates/raxb-xmlschema-build" }
+raxb-axum = { version = "0.4.10", path = "crates/raxb-axum" }
 
 anyhow = { version = "1.0.89", default-features = false }
 async-trait = "0.1.83"
