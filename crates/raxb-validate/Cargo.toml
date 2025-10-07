@@ -16,10 +16,10 @@ keywords.workspace = true
 
 [dependencies]
 raxb-libxml2-sys.workspace = true
-raxb-xmlschema.workspace = true
+raxb-xmlschema = { workspace = true, features = ["reader"] }
 raxb.workspace = true
 libc.workspace = true
-once_cell.workspace = true
+once_cell = { workspace = true, features = ["std"] }
 url.workspace = true
 uuid.workspace = true
 thiserror.workspace = true
