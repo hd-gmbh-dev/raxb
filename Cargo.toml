@@ -30,7 +30,7 @@ byteorder = "1.5"
 thiserror = "1.0.64"
 url = { version = "2.5.0", default-features = false }
 uuid = { version = "1.8", features = ["v5"], default-features = false }
-lz4_flex = { version = "0.11", default-features = false }
+lz4_flex = { version = "0.11", default-features = false, features = ["std"] }
 quick-xml = "0.36.1"
 reqwest = { version = "0.12.8", features = ["blocking"], default-features = false }
 once_cell = { version = "1.20.1", default-features = false }
