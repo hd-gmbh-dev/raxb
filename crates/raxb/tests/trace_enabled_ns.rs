@@ -1,5 +1,6 @@
 use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
 
+#[allow(dead_code)]
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(tns(b"ns1", b"https://local.dev/example"))]
 struct F {
@@ -7,6 +8,7 @@ struct F {
     pub a: String,
 }
 
+#[allow(dead_code)]
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(tns(b"ns1", b"https://local.dev/example"))]
 struct G {
@@ -14,6 +16,7 @@ struct G {
     pub d: String,
 }
 
+#[allow(dead_code)]
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(tns(b"ns1", b"https://local.dev/example"))]
 enum H {
@@ -26,6 +29,7 @@ enum H {
     None,
 }
 
+#[allow(dead_code)]
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(root = b"j")]
 #[xml(tns(b"ns1", b"https://local.dev/example"))]

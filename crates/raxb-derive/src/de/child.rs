@@ -4,7 +4,7 @@ use quote::quote;
 use syn::{AngleBracketedGenericArguments, GenericArgument, PathArguments};
 
 use crate::{
-    container::{BuiltInType, Container, EleType, FieldsSummary, Generic},
+    container::{BuiltInType, Container, EleType, FieldsSummary, Generic, NsValue},
     utils::trace,
 };
 
@@ -262,12 +262,16 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     };
     let ident_str = container.original.ident.to_string();
     let end_branch = if container.tns.is_some() {
-        let tns = &container.tns.as_ref().unwrap().1;
+        // The second element of `tns` is now an `NsValue` which can be a literal or a const identifier.
+        let ns_expr = match &container.tns.as_ref().unwrap().1 {
+            NsValue::LitByte(lit) => quote! { #lit },
+            NsValue::ExprPath(path) => quote! { #path },
+        };
         let trace_end_branch = trace(quote! {
             debug!("Leave struct '{}' with tag '{}' and namespace '{}'", #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(ns.as_ref()).unwrap());
         });
         quote! {
-            (ResolveResult::Bound(ns), Event::End(e)) if e.local_name().as_ref() == tag && ns.as_ref() == #tns =>  {
+            (ResolveResult::Bound(ns), Event::End(e)) if e.local_name().as_ref() == tag && ns.as_ref() == #ns_expr => {
                 #trace_end_branch
                 break;
             },
