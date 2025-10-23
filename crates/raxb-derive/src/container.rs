@@ -98,8 +98,10 @@ impl<'a> Container<'a> {
         {
             match meta_item {
                 NameValue(m) if m.path == ROOT => {
-                    let s = get_lit_byte_str(&m.value).expect("parse root failed");
-                    root = Some(s.clone());
+                    let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) else {
+                        panic!("parse root failed");
+                    };
+                    root = Some(s);
                 }
                 Meta::List(l) if l.path == TNS => {
                     // Parse *any* expressions, then validate each.
@@ -107,7 +109,7 @@ impl<'a> Container<'a> {
                         .parse_args_with(Punctuated::<syn::Expr, Comma>::parse_terminated)
                         .unwrap();
 
-                    let mut iter = exprs.iter();
+                    let mut iter = exprs.into_iter();
                     let first = iter.next().expect("tns needs 2 args");
                     let second = iter.next().expect("tns needs 2 args");
                     if iter.next().is_some() {
@@ -115,16 +117,12 @@ impl<'a> Container<'a> {
                     }
 
                     // ---- first argument must be a byte‑string literal (prefix) ----
-                    let prefix = get_lit_byte_str(first)
-                        .expect("first tns argument must be a byte string literal")
-                        .clone();
+                    let Some(NsValue::LitByte(prefix)) = get_lit_byte_str(first) else {
+                        panic!("first tns argument must be a byte string literal")
+                    };
 
                     // ---- second argument can be literal OR identifier ----
-                    let ns_val = if let Some(lit) = get_lit_byte_str(second) {
-                        NsValue::LitByte(lit.clone())
-                    } else if let syn::Expr::Path(p) = second {
-                        NsValue::ExprPath(p.clone())
-                    } else {
+                    let Some(ns_val) = get_lit_byte_str(second) else {
                         panic!("second tns argument must be a byte string literal or a const identifier");
                     };
 
@@ -222,13 +220,13 @@ impl<'a> StructField<'a> {
         for meta_item in f.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
             match meta_item {
                 NameValue(m) if m.path == NAME => {
-                    if let Some(s) = get_lit_byte_str(&m.value) {
-                        name = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        name = Some(s);
                     }
                 }
                 NameValue(m) if m.path == NS => {
-                    if let Some(s) = get_lit_byte_str(&m.value) {
-                        ns = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        ns = Some(s);
                     }
                 }
                 NameValue(m) if m.path == VALUE => {
@@ -305,13 +303,13 @@ impl<'a> EnumVariant<'a> {
         for meta_item in v.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
             match meta_item {
                 NameValue(m) if m.path == NAME => {
-                    if let Some(s) = get_lit_byte_str(&m.value) {
-                        name = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        name = Some(s);
                     }
                 }
                 NameValue(m) if m.path == NS => {
-                    if let Some(s) = get_lit_byte_str(&m.value) {
-                        ns = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        ns = Some(s);
                     }
                 }
                 NameValue(m) if m.path == TYPE => {
@@ -392,15 +390,14 @@ fn get_xmlserde_meta_items(attr: &syn::Attribute) -> Result<Vec<syn::Meta>, ()> 
     }
 }
 
-fn get_lit_byte_str(expr: &syn::Expr) -> Option<&syn::LitByteStr> {
-    if let syn::Expr::Lit(syn::ExprLit {
-        lit: syn::Lit::ByteStr(l),
-        ..
-    }) = expr
-    {
-        Some(l)
-    } else {
-        None
+fn get_lit_byte_str(expr: syn::Expr) -> Option<NsValue> {
+    match expr {
+        syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::ByteStr(l),
+            ..
+        }) => Some(NsValue::LitByte(l)),
+        syn::Expr::Path(path) => Some(NsValue::ExprPath(path)),
+        _ => None,
     }
 }
 
