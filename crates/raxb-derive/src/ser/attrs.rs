@@ -9,11 +9,11 @@ fn create_attribute_value_impl(ty: &syn::Type) -> proc_macro2::TokenStream {
     let built_in_ty = get_built_in_type(ty);
     if built_in_ty.is_string() {
         return quote! {
-            _raxb::quick_xml::escape::escape(value).as_ref()
+            value.as_ref()
         };
     }
     quote! {
-        _raxb::quick_xml::escape::escape(&value.to_string()).as_ref()
+        value.to_string().as_str()
     }
 }
 

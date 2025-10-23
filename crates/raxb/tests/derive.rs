@@ -72,9 +72,9 @@ fn test_serialize_derive_2() -> anyhow::Result<()> {
 #[test]
 fn test_serialize_derive() -> anyhow::Result<()> {
     let a = A {
-        id: "root".to_string(),
+        id: "root &<>'\"".to_string(),
         b: true,
-        c: "foo".to_string(),
+        c: "foo &<>'\"".to_string(),
         d: D {
             name: "foobar".to_string(),
             e: vec![1, 2, 3],
@@ -98,7 +98,7 @@ fn test_serialize_derive() -> anyhow::Result<()> {
     };
     let xml = raxb::ser::to_string(&a)?;
     assert_eq!(
-        r#"<a id="root"><b/><c>foo</c><d name="foobar"><e>1</e><e>2</e><e>3</e><f><h>bar1</h><j>baz2</j></f><f><j>baz</j></f><k id="one" n="32">k content 1</k></d></a>"#,
+        r#"<a id="root &amp;&lt;&gt;&apos;&quot;"><b/><c>foo &amp;&lt;&gt;&apos;&quot;</c><d name="foobar"><e>1</e><e>2</e><e>3</e><f><h>bar1</h><j>baz2</j></f><f><j>baz</j></f><k id="one" n="32">k content 1</k></d></a>"#,
         xml
     );
     Ok(())
@@ -113,7 +113,7 @@ fn test_deserialize_with_derive_macro() -> anyhow::Result<()> {
             <e>1</e>
             <e>2</e>
             <e>3</e>
-            <d name="child">
+            <d name="child &amp; chill">
                 <e>4</e>
                 <e>5</e>
                 <e>6</e>
@@ -138,7 +138,7 @@ fn test_deserialize_with_derive_macro() -> anyhow::Result<()> {
     assert_eq!(a.d.f.first().unwrap().j, "baz2");
     assert!(a.d.f.get(1).unwrap().h.is_none());
     assert_eq!(a.d.f.get(1).unwrap().j, "baz");
-    assert_eq!(a.d.d.first().unwrap().name, "child");
+    assert_eq!(a.d.d.first().unwrap().name, "child & chill");
     assert_eq!(a.d.d.first().unwrap().e, vec![4, 5, 6]);
     assert_eq!(a.d.k.first().unwrap().id.as_ref().unwrap(), "one");
     assert_eq!(a.d.k.first().unwrap().n, 32);
