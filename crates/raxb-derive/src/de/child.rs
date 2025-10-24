@@ -262,7 +262,6 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
     };
     let ident_str = container.original.ident.to_string();
     let end_branch = if container.tns.is_some() {
-        // The second element of `tns` is now an `NsValue` which can be a literal or a const identifier.
         let ns_expr = match &container.tns.as_ref().unwrap().1 {
             NsValue::LitByte(lit) => quote! { #lit },
             NsValue::ExprPath(path) => quote! { #path },
