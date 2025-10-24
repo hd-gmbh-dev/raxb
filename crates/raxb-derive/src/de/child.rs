@@ -261,8 +261,8 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         quote! {}
     };
     let ident_str = container.original.ident.to_string();
-    let end_branch = if container.tns.is_some() {
-        let ns_expr = match &container.tns.as_ref().unwrap().1 {
+    let end_branch = if let Some((_, tns_expr)) = &container.tns {
+        let ns_expr = match tns_expr {
             NsValue::LitByte(lit) => quote! { #lit },
             NsValue::ExprPath(path) => quote! { #path },
         };
