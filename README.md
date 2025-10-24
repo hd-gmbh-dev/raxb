@@ -22,7 +22,7 @@ Add dependency to Cargo.toml:
 
 ```toml
 [dependencies]
-raxb = "0.4"
+raxb = "0.5"
 ```
 
 ## Development
