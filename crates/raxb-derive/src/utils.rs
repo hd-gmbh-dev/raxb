@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use quote::quote;
 
-use crate::container::{BuiltInConstType, BuiltInType, Container, Generic, StructField};
+use crate::container::{BuiltInConstType, BuiltInType, Container, Generic, NsValue, StructField};
 
 pub fn create_ident(f: &StructField) -> proc_macro2::TokenStream {
     let ident = f.original.ident.as_ref().unwrap();
@@ -39,10 +39,14 @@ pub fn get_built_in_const_type(ty: &syn::Type) -> BuiltInConstType {
 }
 
 pub fn create_tns_impl(container: &Container) -> proc_macro2::TokenStream {
-    if let Some((_, ns)) = container.tns.as_ref() {
+    if let Some((_, ns_val)) = container.tns.as_ref() {
+        let ns_token = match ns_val {
+            NsValue::LitByte(lit) => quote! { #lit },
+            NsValue::ExprPath(path) => quote! { #path },
+        };
         quote! {
             fn target_ns() -> Option<_raxb::ty::XmlTargetNs> {
-                Some(#ns)
+                Some(#ns_token)
             }
         }
     } else {

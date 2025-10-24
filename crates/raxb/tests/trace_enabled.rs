@@ -16,6 +16,7 @@ pub struct B {
     pub d: String,
 }
 
+#[cfg(feature = "trace")]
 #[derive(Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 enum E {
     #[xml(name = b"a")]
@@ -24,6 +25,7 @@ enum E {
     B(B),
 }
 
+#[allow(dead_code)]
 #[derive(Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 enum F {
     #[xml(name = b"a")]

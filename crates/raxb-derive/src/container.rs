@@ -1,10 +1,12 @@
-use crate::symbol::*;
-
 use strum::EnumString;
-use syn::punctuated::Punctuated;
-use syn::token::Comma;
-use syn::Meta::{self, NameValue, Path};
-use syn::Variant;
+use syn::{
+    punctuated::Punctuated,
+    token::Comma,
+    Meta::{self, NameValue, Path},
+    Variant,
+};
+
+use crate::symbol::*;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default, PartialEq, EnumString)]
@@ -59,13 +61,19 @@ impl BuiltInType {
     }
 }
 
-#[allow(dead_code)]
+pub enum NsValue {
+    /// A byte‑string literal (`b"…"`)
+    LitByte(syn::LitByteStr),
+    /// An identifier / path that evaluates to `&'static [u8]` (e.g. a const)
+    ExprPath(syn::ExprPath),
+}
+
 pub struct Container<'a> {
     pub struct_fields: Vec<StructField<'a>>, // Struct fields
     pub enum_variants: Vec<EnumVariant<'a>>,
     pub original: &'a syn::DeriveInput,
     pub root: Option<syn::LitByteStr>,
-    pub tns: Option<(syn::LitByteStr, syn::LitByteStr)>,
+    pub tns: Option<(syn::LitByteStr, NsValue)>,
 }
 
 impl<'a> Container<'a> {
@@ -81,7 +89,7 @@ impl<'a> Container<'a> {
 
     pub fn from_ast(item: &'a syn::DeriveInput, _derive: Derive) -> Container<'a> {
         let mut root = Option::<syn::LitByteStr>::None;
-        let mut tns = Option::<(syn::LitByteStr, syn::LitByteStr)>::None;
+        let mut tns = Option::<(syn::LitByteStr, NsValue)>::None;
         for meta_item in item
             .attrs
             .iter()
@@ -90,22 +98,37 @@ impl<'a> Container<'a> {
         {
             match meta_item {
                 NameValue(m) if m.path == ROOT => {
-                    let s = get_lit_byte_str(&m.value).expect("parse root failed");
-                    root = Some(s.clone());
+                    let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) else {
+                        panic!("parse root failed");
+                    };
+                    root = Some(s);
                 }
                 Meta::List(l) if l.path == TNS => {
-                    let strs = l
-                        .parse_args_with(Punctuated::<syn::LitByteStr, Comma>::parse_terminated)
+                    // Parse *any* expressions, then validate each.
+                    let exprs = l
+                        .parse_args_with(Punctuated::<syn::Expr, Comma>::parse_terminated)
                         .unwrap();
-                    let mut iter = strs.iter();
-                    let first = iter.next().expect("tns should have 2 arguments");
-                    let second = iter.next().expect("tns should have 2 arguments");
+
+                    let mut iter = exprs.into_iter();
+                    let first = iter.next().expect("tns needs 2 args");
+                    let second = iter.next().expect("tns needs 2 args");
                     if iter.next().is_some() {
-                        panic!("tns should have 2 arguments")
+                        panic!("tns should have exactly 2 arguments");
                     }
-                    tns = Some((first.clone(), second.clone()));
+
+                    // ---- first argument must be a byte‑string literal (prefix) ----
+                    let Some(NsValue::LitByte(prefix)) = get_lit_byte_str(first) else {
+                        panic!("first tns argument must be a byte string literal")
+                    };
+
+                    // ---- second argument can be literal OR identifier ----
+                    let Some(ns_val) = get_lit_byte_str(second) else {
+                        panic!("second tns argument must be a byte string literal or a const identifier");
+                    };
+
+                    tns = Some((prefix, ns_val));
                 }
-                _ => panic!("unexpected"),
+                _ => panic!("unexpected attribute"),
             }
         }
         match &item.data {
@@ -197,13 +220,13 @@ impl<'a> StructField<'a> {
         for meta_item in f.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
             match meta_item {
                 NameValue(m) if m.path == NAME => {
-                    if let Ok(s) = get_lit_byte_str(&m.value) {
-                        name = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        name = Some(s);
                     }
                 }
                 NameValue(m) if m.path == NS => {
-                    if let Ok(s) = get_lit_byte_str(&m.value) {
-                        ns = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        ns = Some(s);
                     }
                 }
                 NameValue(m) if m.path == VALUE => {
@@ -280,13 +303,13 @@ impl<'a> EnumVariant<'a> {
         for meta_item in v.attrs.iter().flat_map(get_xmlserde_meta_items).flatten() {
             match meta_item {
                 NameValue(m) if m.path == NAME => {
-                    if let Ok(s) = get_lit_byte_str(&m.value) {
-                        name = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        name = Some(s);
                     }
                 }
                 NameValue(m) if m.path == NS => {
-                    if let Ok(s) = get_lit_byte_str(&m.value) {
-                        ns = Some(s.clone());
+                    if let Some(NsValue::LitByte(s)) = get_lit_byte_str(m.value) {
+                        ns = Some(s);
                     }
                 }
                 NameValue(m) if m.path == TYPE => {
@@ -367,13 +390,15 @@ fn get_xmlserde_meta_items(attr: &syn::Attribute) -> Result<Vec<syn::Meta>, ()> 
     }
 }
 
-fn get_lit_byte_str(expr: &syn::Expr) -> Result<&syn::LitByteStr, ()> {
-    if let syn::Expr::Lit(lit) = expr {
-        if let syn::Lit::ByteStr(l) = &lit.lit {
-            return Ok(l);
-        }
+fn get_lit_byte_str(expr: syn::Expr) -> Option<NsValue> {
+    match expr {
+        syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::ByteStr(l),
+            ..
+        }) => Some(NsValue::LitByte(l)),
+        syn::Expr::Path(path) => Some(NsValue::ExprPath(path)),
+        _ => None,
     }
-    Err(())
 }
 
 fn get_lit_str(lit: &syn::Expr) -> Result<&syn::LitStr, ()> {
