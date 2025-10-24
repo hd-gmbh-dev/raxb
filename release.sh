@@ -2,9 +2,10 @@
 
 set -e
 
-export SQLX_OFFLINE=true
-
-cargo set-version --workspace --bump patch
+RELEASE_TYPE=${RELEASE_TYPE:-patch}
+if [ "$RELEASE_TYPE" != "current" ]; then
+    cargo set-version --workspace --bump ${RELEASE_TYPE}
+fi
 VERSION=`cargo pkgid -p raxb | cut -d "#" -f2`
 cargo update
 cargo build
