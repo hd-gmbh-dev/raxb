@@ -298,3 +298,49 @@ fn test_deserialize_empty_tag() -> anyhow::Result<()> {
     assert_eq!(f.s.as_deref(), Some("text"));
     Ok(())
 }
+
+#[test]
+fn test_deserialize_array_with_empty_tags() -> anyhow::Result<()> {
+    let xml = r#"
+        <SimpleCodeList>
+           <Row>
+              <Value/>
+           </Row>
+           <Row>
+              <Value><String>value</String></Value>
+           </Row>
+           <Row></Row>
+           <Row/>
+        </SimpleCodeList>
+    "#;
+
+    #[derive(Debug, XmlDeserialize, PartialEq, Eq)]
+    pub struct Value {
+        #[xml(name = b"String", ty = "child")]
+        pub string: Option<String>,
+    }
+    #[derive(Debug, XmlDeserialize)]
+    pub struct Row {
+        #[xml(name = b"Value", ty = "child")]
+        pub _value: Option<Value>,
+    }
+    #[derive(Debug, XmlDeserialize)]
+    #[xml(root = b"SimpleCodeList")]
+    pub struct SimpleCodeList {
+        #[xml(name = b"Row", ty = "child")]
+        pub rows: Vec<Row>,
+    }
+
+    let cl = raxb::de::from_str::<SimpleCodeList>(xml)?;
+    assert_eq!(cl.rows.len(), 4);
+    assert_eq!(cl.rows[0]._value, Some(Value { string: None }));
+    assert_eq!(
+        cl.rows[1]._value,
+        Some(Value {
+            string: Some("value".to_string())
+        })
+    );
+    assert_eq!(cl.rows[2]._value, None);
+    assert_eq!(cl.rows[3]._value, None);
+    Ok(())
+}
