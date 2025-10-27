@@ -304,21 +304,23 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             }
         };
         quote! {
-            let mut buf = Vec::<u8>::new();
+            if !is_empty {
+                let mut buf = Vec::<u8>::new();
 
-            loop {
-                match reader.read_resolved_event_into(&mut buf)? {
-                    #qualified_child_branch
-                    #qualified_sfc_branch
-                    #unqualified_child_branch
-                    #unqualified_sfc_branch
-                    #end_branch
-                    #qualified_child_terminate_branch
-                    #unqualified_child_terminate_branch
-                    (_, Event::Eof) => {
-                        break;
-                    },
-                    #unexpected_event,
+                loop {
+                    match reader.read_resolved_event_into(&mut buf)? {
+                        #qualified_child_branch
+                        #qualified_sfc_branch
+                        #unqualified_child_branch
+                        #unqualified_sfc_branch
+                        #end_branch
+                        #qualified_child_terminate_branch
+                        #unqualified_child_terminate_branch
+                        (_, Event::Eof) => {
+                            break;
+                        },
+                        #unexpected_event,
+                    }
                 }
             }
         }
