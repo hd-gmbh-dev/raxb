@@ -68,6 +68,14 @@ pub enum NsValue {
     ExprPath(syn::ExprPath),
 }
 
+/// Represents a value for the `value` attribute - either a string literal or a const path.
+pub enum StringValue {
+    /// A string literal (`"…"`)
+    LitStr(syn::LitStr),
+    /// An identifier / path that evaluates to `&'static str` (e.g. a const)
+    ExprPath(syn::ExprPath),
+}
+
 pub struct Container<'a> {
     pub struct_fields: Vec<StructField<'a>>, // Struct fields
     pub enum_variants: Vec<EnumVariant<'a>>,
@@ -205,7 +213,7 @@ pub struct StructField<'a> {
     pub original: &'a syn::Field,
     pub generic: Generic<'a>,
     pub ns: Option<syn::LitByteStr>,
-    pub value: Option<syn::LitStr>,
+    pub value: Option<StringValue>,
     pub default: bool,
 }
 
@@ -213,7 +221,7 @@ impl<'a> StructField<'a> {
     pub fn from_ast(f: &'a syn::Field) -> Option<Self> {
         let mut name = Option::<syn::LitByteStr>::None;
         let mut ns = Option::<syn::LitByteStr>::None;
-        let mut value = Option::<syn::LitStr>::None;
+        let mut value = Option::<StringValue>::None;
         let mut ty = Option::<EleType>::None;
         let mut default = false;
         let generic = get_generics(&f.ty);
@@ -230,8 +238,8 @@ impl<'a> StructField<'a> {
                     }
                 }
                 NameValue(m) if m.path == VALUE => {
-                    if let Ok(s) = get_lit_str(&m.value) {
-                        value = Some(s.clone());
+                    if let Some(v) = get_string_value(m.value) {
+                        value = Some(v);
                     }
                 }
                 NameValue(m) if m.path == TYPE => {
@@ -408,6 +416,17 @@ fn get_lit_str(lit: &syn::Expr) -> Result<&syn::LitStr, ()> {
         }
     }
     Err(())
+}
+
+fn get_string_value(expr: syn::Expr) -> Option<StringValue> {
+    match expr {
+        syn::Expr::Lit(syn::ExprLit {
+            lit: syn::Lit::Str(l),
+            ..
+        }) => Some(StringValue::LitStr(l)),
+        syn::Expr::Path(path) => Some(StringValue::ExprPath(path)),
+        _ => None,
+    }
 }
 
 fn get_generics(t: &syn::Type) -> Generic<'_> {
