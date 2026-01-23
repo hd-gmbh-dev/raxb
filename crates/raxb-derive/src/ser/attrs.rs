@@ -1,7 +1,7 @@
 use quote::quote;
 
 use crate::{
-    container::{BuiltInConstType, Container, EleType, Generic},
+    container::{BuiltInConstType, Container, EleType, Generic, StringValue},
     utils::{get_built_in_const_type, get_built_in_type},
 };
 
@@ -58,8 +58,10 @@ pub fn create_attribute_blocks(container: &Container) -> Vec<proc_macro2::TokenS
                     && matches!(get_built_in_const_type(ty), BuiltInConstType::ConstStr)
                 {
                     let const_val = f.value.as_ref().unwrap();
-                    let v = const_val.value();
-                    let value = v.as_str();
+                    let value = match const_val {
+                        StringValue::LitStr(lit) => quote! { #lit },
+                        StringValue::ExprPath(path) => quote! { #path },
+                    };
                     blocks.push(quote! {
                         el_writer = el_writer.with_attribute((#name, #value));
                     })
