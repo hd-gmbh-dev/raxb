@@ -38,5 +38,16 @@ fn test_const_value_serde() -> anyhow::Result<()> {
         a2.schema_location.as_ref(),
         "https://myexample.org/examplev100 example.xsd"
     );
+
+    // Deserialize - modify expected xml to assert different schema location
+    let expected_xml = r#"<a product="H &amp; D" xmlns:xsi="https://my.example.org/" xsi:schemaLocation="https://myexample.org/examplev101 example.xsd"/>"#;
+    let a2: A = raxb::de::from_str(expected_xml)?;
+    assert_eq!(a2.product.as_ref(), "H & D");
+    assert_eq!(a2.xmlns_xsi.as_ref(), "https://my.example.org/");
+    assert_eq!(
+        a2.schema_location.as_ref(),
+        "https://myexample.org/examplev101 example.xsd"
+    );
+
     Ok(())
 }
