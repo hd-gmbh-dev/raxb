@@ -270,10 +270,11 @@ pub fn find_root_xsi_schema_location(xml: &[u8]) -> Result<String, ValidationErr
             Ok((_, Event::Start(ref e))) => {
                 schema_location = e.attributes().find_map(|a| {
                     if let Ok(attr) = a
-                        && (attr.key.local_name().as_ref() == b"schemaLocation"
-                            || attr.key.local_name().as_ref() == b"noNamespaceSchemaLocation")
+                        && (attr.key.local_name().as_ref().as_bytes() == b"schemaLocation"
+                            || attr.key.local_name().as_ref().as_bytes()
+                                == b"noNamespaceSchemaLocation")
                     {
-                        return String::from_utf8(attr.value.to_vec()).ok();
+                        return Some(attr.value.to_string());
                     }
                     None
                 });

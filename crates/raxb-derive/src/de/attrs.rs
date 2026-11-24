@@ -44,7 +44,7 @@ pub fn create_assignments(fields: &FieldsSummary) -> proc_macro2::TokenStream {
             if built_in_type.is_string() {
                 return Some(quote! {
                     #name => {
-                        let value_str = String::from_utf8(attr.value.to_vec())?;
+                        let value_str = attr.value.as_ref();
                         let value = _raxb::quick_xml::escape::unescape(&value_str)?;
                         #ident = Some(value.to_string());
                     }
@@ -52,7 +52,7 @@ pub fn create_assignments(fields: &FieldsSummary) -> proc_macro2::TokenStream {
             } else {
                 return Some(quote! {
                     #name => {
-                        let value_str = String::from_utf8(attr.value.to_vec())?;
+                        let value_str = attr.value.as_ref();
                         let value = _raxb::quick_xml::escape::unescape(&value_str)?;
                         #ident = Some(value.trim().parse().unwrap_or_default());
                     }
@@ -63,7 +63,7 @@ pub fn create_assignments(fields: &FieldsSummary) -> proc_macro2::TokenStream {
     });
     quote! {
         for attr in attributes.flatten() {
-            match attr.key.local_name().as_ref() {
+            match attr.key.local_name().as_ref().as_bytes() {
                 #(#attrs)*
                 _ => {}
             }

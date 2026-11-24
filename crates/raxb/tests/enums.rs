@@ -54,7 +54,7 @@ impl XmlDeserialize for E {
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
                 (ResolveResult::Unbound, Event::Start(e)) => match e.local_name().as_ref() {
-                    root if Some(root) == A::root() => {
+                    root if Some(root.as_bytes()) == A::root() => {
                         result = Some(E::A(A::xml_deserialize(
                             reader,
                             &[],
@@ -64,7 +64,7 @@ impl XmlDeserialize for E {
                         )?));
                         break;
                     }
-                    root if Some(root) == B::root() => {
+                    root if Some(root.as_bytes()) == B::root() => {
                         result = Some(E::B(B::xml_deserialize(
                             reader,
                             &[],
@@ -76,13 +76,13 @@ impl XmlDeserialize for E {
                     }
                     _ => {
                         return Err(raxb::de::XmlDeserializeError::UnknownVariant(
-                            String::from_utf8_lossy(e.name().as_ref()).to_string(),
+                            e.name().as_ref().to_string(),
                             S(b"'a' | 'b'"),
                         ));
                     }
                 },
                 (ResolveResult::Unbound, Event::Empty(e)) => match e.local_name().as_ref() {
-                    root if Some(root) == A::root() => {
+                    root if Some(root.as_bytes()) == A::root() => {
                         result = Some(E::A(A::xml_deserialize(
                             reader,
                             &[],
@@ -92,7 +92,7 @@ impl XmlDeserialize for E {
                         )?));
                         break;
                     }
-                    root if Some(root) == B::root() => {
+                    root if Some(root.as_bytes()) == B::root() => {
                         result = Some(E::B(B::xml_deserialize(
                             reader,
                             &[],
@@ -104,7 +104,7 @@ impl XmlDeserialize for E {
                     }
                     _ => {
                         return Err(raxb::de::XmlDeserializeError::UnknownVariant(
-                            String::from_utf8_lossy(e.name().as_ref()).to_string(),
+                            e.name().as_ref().to_string(),
                             S(b"'a' | 'b'"),
                         ));
                     }

@@ -133,7 +133,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         let unexpected_end_event = if cfg!(feature = "trace") {
             quote! {
                 ev => {
-                    _raxb::tracing::warn!("Unexpected End Event: '{}' with namespace: '{}'", String::from_utf8_lossy(ev), String::from_utf8_lossy(ns.as_ref()));
+                    _raxb::tracing::warn!("Unexpected End Event: '{}' with namespace: '{}'", String::from_utf8_lossy(ev), ns.as_ref());
                 }
             }
         } else {
@@ -143,7 +143,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         };
         quote! {
             (ResolveResult::Bound(ns), Event::End(ev)) => {
-                match ev.local_name().as_ref() {
+                match ev.local_name().as_ref().as_bytes() {
                     #(#qualified_child_terminate_branches,)*
                     #unexpected_end_event,
                 }
@@ -165,7 +165,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         };
         quote! {
             (ResolveResult::Bound(ns), Event::Start(ev)) => {
-                match ev.local_name().as_ref() {
+                match ev.local_name().as_ref().as_bytes() {
                     #(#qualified_child_branches,)*
                     _ => {
                         #unexpected_start_event
@@ -184,7 +184,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         let qualified_sfc_branches = qualified_sfc_branches.into_iter();
         quote! {
             (ResolveResult::Bound(ns), Event::Empty(ev)) => {
-                match ev.local_name().as_ref() {
+                match ev.local_name().as_ref().as_bytes() {
                     #(#qualified_sfc_branches,)*
                     _ => {},
                 }
@@ -210,7 +210,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         };
         quote! {
             (ResolveResult::Unbound, Event::End(ev)) => {
-                match ev.local_name().as_ref() {
+                match ev.local_name().as_ref().as_bytes() {
                     #(#unqualified_child_terminate_branches,)*
                     #unexpected_end_event,
                 }
@@ -232,7 +232,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         };
         quote! {
             (ResolveResult::Unbound, Event::Start(ev)) => {
-                match ev.local_name().as_ref() {
+                match ev.local_name().as_ref().as_bytes() {
                     #(#unqualified_child_branches,)*
                     _ => {
                         #unexpected_start_event
@@ -251,7 +251,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
         let unqualified_sfc_branches = unqualified_sfc_branches.into_iter();
         quote! {
             (ResolveResult::Unbound, Event::Empty(ev)) => {
-                match ev.local_name().as_ref() {
+                match ev.local_name().as_ref().as_bytes() {
                     #(#unqualified_sfc_branches,)*
                     _ => {},
                 }
@@ -267,10 +267,10 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             NsValue::ExprPath(path) => quote! { #path },
         };
         let trace_end_branch = trace(quote! {
-            debug!("Leave struct '{}' with tag '{}' and namespace '{}'", #ident_str, std::str::from_utf8(tag).unwrap(), std::str::from_utf8(ns.as_ref()).unwrap());
+            debug!("Leave struct '{}' with tag '{}' and namespace '{}'", #ident_str, std::str::from_utf8(tag).unwrap(), ns.as_ref());
         });
         quote! {
-            (ResolveResult::Bound(ns), Event::End(e)) if e.local_name().as_ref() == tag && ns.as_ref() == #ns_expr => {
+            (ResolveResult::Bound(ns), Event::End(e)) if e.local_name().as_ref().as_bytes() == tag && ns.as_ref().as_bytes() == #ns_expr => {
                 #trace_end_branch
                 break;
             },
@@ -280,7 +280,7 @@ pub fn create_assignments(container: &Container) -> proc_macro2::TokenStream {
             debug!("Leave struct '{}' with tag '{}'", #ident_str, std::str::from_utf8(tag).unwrap());
         });
         quote! {
-            (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+            (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref().as_bytes() == tag => {
                 #trace_end_branch
                 break;
             },

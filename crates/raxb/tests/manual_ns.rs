@@ -40,8 +40,10 @@ where
         let mut body = Option::<T>::None;
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Bound(ns), Event::Start(ev)) if ns.as_ref() == target_ns => {
-                    match ev.local_name().as_ref() {
+                (ResolveResult::Bound(ns), Event::Start(ev))
+                    if ns.as_ref().as_bytes() == target_ns =>
+                {
+                    match ev.local_name().as_ref().as_bytes() {
                         b"Body" => {
                             body = Some(T::xml_deserialize(
                                 reader,
@@ -58,7 +60,8 @@ where
                     }
                 }
                 (ResolveResult::Bound(ns), Event::End(e))
-                    if ns.as_ref() == target_ns && e.local_name().as_ref() == tag =>
+                    if ns.as_ref().as_bytes() == target_ns
+                        && e.local_name().as_ref().as_bytes() == tag =>
                 {
                     break;
                 }
@@ -135,12 +138,13 @@ impl XmlDeserialize for Header {
             match reader.read_resolved_event_into(&mut buf)? {
                 (_, Event::Text(ev)) => {
                     content = Some(
-                        ev.xml_content(quick_xml::XmlVersion::Explicit1_0)?
+                        ev.xml_content(quick_xml::XmlVersion::Explicit1_0)
                             .to_string(),
                     )
                 }
                 (ResolveResult::Bound(ns), Event::End(e))
-                    if e.local_name().as_ref() == tag && ns.as_ref() == target_ns =>
+                    if e.local_name().as_ref().as_bytes() == tag
+                        && ns.as_ref().as_bytes() == target_ns =>
                 {
                     break;
                 }
@@ -201,8 +205,10 @@ impl XmlDeserialize for Example {
         let mut header = Option::<Header>::None;
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Bound(ns), Event::Start(ev)) if ns.as_ref() == target_ns => {
-                    match ev.local_name().as_ref() {
+                (ResolveResult::Bound(ns), Event::Start(ev))
+                    if ns.as_ref().as_bytes() == target_ns =>
+                {
+                    match ev.local_name().as_ref().as_bytes() {
                         b"header" => {
                             header = Some(Header::xml_deserialize(
                                 reader,
@@ -219,7 +225,8 @@ impl XmlDeserialize for Example {
                     }
                 }
                 (ResolveResult::Bound(ns), Event::End(e))
-                    if e.local_name().as_ref() == tag && ns.as_ref() == target_ns =>
+                    if e.local_name().as_ref().as_bytes() == tag
+                        && ns.as_ref().as_bytes() == target_ns =>
                 {
                     break;
                 }

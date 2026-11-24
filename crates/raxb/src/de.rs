@@ -51,8 +51,8 @@ pub fn resolve_entity_ref(r: &BytesRef<'_>) -> XmlDeserializeResult<String> {
     if let Some(c) = r.resolve_char_ref()? {
         return Ok(c.to_string());
     }
-    let name = r.decode()?;
-    quick_xml::escape::resolve_predefined_entity(&name)
+    let name = r.as_ref();
+    quick_xml::escape::resolve_predefined_entity(name)
         .map(str::to_string)
         .ok_or_else(|| XmlDeserializeError::UnknownEntity(name.to_string()))
 }
@@ -67,13 +67,13 @@ pub fn read_text_content<R: BufRead>(
     let mut buf = Vec::<u8>::new();
     loop {
         match reader.read_resolved_event_into(&mut buf)? {
-            (_, Event::Text(t)) => value.push_str(&t.xml_content(XmlVersion::Explicit1_0)?),
+            (_, Event::Text(t)) => value.push_str(&t.xml_content(XmlVersion::Explicit1_0)),
             (_, Event::GeneralRef(r)) => value.push_str(&resolve_entity_ref(&r)?),
             (_, Event::Start(e)) => {
                 let mut skipped = Vec::<u8>::new();
                 reader.read_to_end_into(e.name(), &mut skipped)?;
             }
-            (_, Event::End(e)) if e.local_name().as_ref() == tag => break,
+            (_, Event::End(e)) if e.local_name().as_ref().as_bytes() == tag => break,
             (_, Event::Eof) => break,
             _ => {}
         }
@@ -128,7 +128,9 @@ where
         loop {
             match rdr.read_resolved_event_into(&mut buf)? {
                 (ResolveResult::Bound(tns), Event::Start(e)) => {
-                    if e.local_name().as_ref() == root && tns.as_ref() == target_ns {
+                    if e.local_name().as_ref().as_bytes() == root
+                        && tns.as_ref().as_bytes() == target_ns
+                    {
                         result = Some(T::xml_deserialize(
                             &mut rdr,
                             target_ns,
@@ -142,7 +144,9 @@ where
                     }
                 }
                 (ResolveResult::Bound(tns), Event::Empty(e)) => {
-                    if e.local_name().as_ref() == root && tns.as_ref() == target_ns {
+                    if e.local_name().as_ref().as_bytes() == root
+                        && tns.as_ref().as_bytes() == target_ns
+                    {
                         result = Some(T::xml_deserialize(
                             &mut rdr,
                             target_ns,
@@ -162,7 +166,7 @@ where
         loop {
             match rdr.read_resolved_event_into(&mut buf)? {
                 (ResolveResult::Unbound, Event::Start(e)) => {
-                    if e.local_name().as_ref() == root {
+                    if e.local_name().as_ref().as_bytes() == root {
                         result = Some(T::xml_deserialize(
                             &mut rdr,
                             &[],
@@ -176,7 +180,7 @@ where
                     }
                 }
                 (ResolveResult::Unbound, Event::Empty(e)) => {
-                    if e.local_name().as_ref() == root {
+                    if e.local_name().as_ref().as_bytes() == root {
                         result = Some(T::xml_deserialize(
                             &mut rdr,
                             &[],

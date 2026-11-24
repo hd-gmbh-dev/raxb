@@ -38,35 +38,39 @@ impl XmlDeserialize for F {
 
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Start(ev)) => match ev.local_name().as_ref() {
-                    b"h" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            h = Some(
-                                t.xml_content(quick_xml::XmlVersion::Explicit1_0)?
-                                    .to_string(),
-                            );
+                (ResolveResult::Unbound, Event::Start(ev)) => {
+                    match ev.local_name().as_ref().as_bytes() {
+                        b"h" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                h = Some(
+                                    t.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                        .to_string(),
+                                );
+                            }
+                        }
+                        b"j" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                j = Some(
+                                    t.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                        .to_string(),
+                                );
+                            }
+                        }
+                        _ => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            reader.read_to_end_into(ev.name(), &mut buffer)?;
                         }
                     }
-                    b"j" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            j = Some(
-                                t.xml_content(quick_xml::XmlVersion::Explicit1_0)?
-                                    .to_string(),
-                            );
-                        }
-                    }
-                    _ => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        reader.read_to_end_into(ev.name(), &mut buffer)?;
-                    }
-                },
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                }
+                (ResolveResult::Unbound, Event::End(e))
+                    if e.local_name().as_ref().as_bytes() == tag =>
+                {
                     break;
                 }
                 (ResolveResult::Unbound, Event::Eof) => {
@@ -127,9 +131,9 @@ impl XmlDeserialize for D {
 
         let mut name = Option::<String>::None;
         for attr in attributes.flatten() {
-            match attr.key.local_name().as_ref() {
+            match attr.key.local_name().as_ref().as_bytes() {
                 b"name" => {
-                    name = Some(String::from_utf8(attr.value.to_vec())?);
+                    name = Some(attr.value.to_string());
                 }
                 _ => {}
             }
@@ -140,33 +144,37 @@ impl XmlDeserialize for D {
 
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Start(ev)) => match ev.local_name().as_ref() {
-                    b"e" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            let v = t
-                                .xml_content(quick_xml::XmlVersion::Explicit1_0)?
-                                .parse::<i32>()?;
-                            e.push(v);
+                (ResolveResult::Unbound, Event::Start(ev)) => {
+                    match ev.local_name().as_ref().as_bytes() {
+                        b"e" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                let v = t
+                                    .xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                    .parse::<i32>()?;
+                                e.push(v);
+                            }
+                        }
+                        b"f" => {
+                            f.push(F::xml_deserialize(
+                                reader,
+                                target_ns,
+                                b"f",
+                                ev.attributes(),
+                                false,
+                            )?);
+                        }
+                        _ => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            reader.read_to_end_into(ev.name(), &mut buffer)?;
                         }
                     }
-                    b"f" => {
-                        f.push(F::xml_deserialize(
-                            reader,
-                            target_ns,
-                            b"f",
-                            ev.attributes(),
-                            false,
-                        )?);
-                    }
-                    _ => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        reader.read_to_end_into(ev.name(), &mut buffer)?;
-                    }
-                },
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                }
+                (ResolveResult::Unbound, Event::End(e))
+                    if e.local_name().as_ref().as_bytes() == tag =>
+                {
                     break;
                 }
                 (ResolveResult::Unbound, Event::Eof) => {
@@ -236,9 +244,9 @@ impl XmlDeserialize for A {
 
         let mut id = Option::<String>::None;
         for attr in attributes.flatten() {
-            match attr.key.local_name().as_ref() {
+            match attr.key.local_name().as_ref().as_bytes() {
                 b"id" => {
-                    id = Some(String::from_utf8(attr.value.to_vec())?);
+                    id = Some(attr.value.to_string());
                 }
                 _ => {}
             }
@@ -250,39 +258,45 @@ impl XmlDeserialize for A {
 
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Start(e)) => match e.local_name().as_ref() {
-                    b"c" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            c = Some(
-                                t.xml_content(quick_xml::XmlVersion::Explicit1_0)?
-                                    .to_string(),
-                            );
+                (ResolveResult::Unbound, Event::Start(e)) => {
+                    match e.local_name().as_ref().as_bytes() {
+                        b"c" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                c = Some(
+                                    t.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                        .to_string(),
+                                );
+                            }
+                        }
+                        b"d" => {
+                            d = Some(D::xml_deserialize(
+                                reader,
+                                target_ns,
+                                b"d",
+                                e.attributes(),
+                                false,
+                            )?)
+                        }
+                        _ => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            reader.read_to_end_into(e.name(), &mut buffer)?;
                         }
                     }
-                    b"d" => {
-                        d = Some(D::xml_deserialize(
-                            reader,
-                            target_ns,
-                            b"d",
-                            e.attributes(),
-                            false,
-                        )?)
+                }
+                (ResolveResult::Unbound, Event::Empty(e)) => {
+                    match e.local_name().as_ref().as_bytes() {
+                        b"b" => {
+                            b = Some(true);
+                        }
+                        _ => {}
                     }
-                    _ => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        reader.read_to_end_into(e.name(), &mut buffer)?;
-                    }
-                },
-                (ResolveResult::Unbound, Event::Empty(e)) => match e.local_name().as_ref() {
-                    b"b" => {
-                        b = Some(true);
-                    }
-                    _ => {}
-                },
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                }
+                (ResolveResult::Unbound, Event::End(e))
+                    if e.local_name().as_ref().as_bytes() == tag =>
+                {
                     break;
                 }
                 (_, Event::Eof) => {
