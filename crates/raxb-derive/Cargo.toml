@@ -24,5 +24,4 @@ heck = "0.5"
 syn = { version = "2", default-features = false }
 quote = { version = "1.0", default-features = false }
 proc-macro2 = { version = "1.0", default-features = false }
-quick-xml.workspace = true
 strum = { version = "0.26", features = ["derive"], default-features = false }
