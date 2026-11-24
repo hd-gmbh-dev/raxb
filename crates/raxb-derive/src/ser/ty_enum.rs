@@ -57,9 +57,8 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             } else if built_in_type.is_number() {
                 return Some(quote! {
                     Self::#variant_ident(v) => {
-                        writer.create_element(#name).write_text_content(
-                            &v.to_string()
-                        )?;
+                        let value = v.to_string();
+                        writer.create_element(#name).write_text_content(value.as_str())?;
                         Ok::<(), _raxb::ser::XmlSerializeError>(())
                     }
                 });
@@ -68,7 +67,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     Self::#variant_ident(v) => {
                         writer.create_element(#name).write_text_content(
                             _raxb::quick_xml::events::BytesText::from_escaped(
-                                _raxb::quick_xml::escape::escape(&v),
+                                _raxb::quick_xml::escape::escape(v.as_str()),
                             ),
                         )?;
                         Ok::<(), _raxb::ser::XmlSerializeError>(())
@@ -125,7 +124,8 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                         writer.create_element(tag).write_inner_content(|writer| {
                             match self {
                                 #(#serialize_branches_2,)*
-                            }
+                            }?;
+                            Ok(())
                         })?;
                     }
                     Ok::<(), _raxb::ser::XmlSerializeError>(())

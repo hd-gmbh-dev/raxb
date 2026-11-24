@@ -8,14 +8,15 @@ use crate::{
 fn create_write_text_value(name: &str) -> proc_macro2::TokenStream {
     quote! {
         writer.create_element(#name)
-            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value)))?;
+            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(value)))?;
     }
 }
 
 fn create_write_any_builtin_value(name: &str) -> proc_macro2::TokenStream {
     quote! {
+        let value = value.to_string();
         writer.create_element(#name)
-            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value.to_string())))?;
+            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(value.as_str())))?;
     }
 }
 
@@ -128,7 +129,7 @@ pub fn create_child_blocks(container: &Container) -> Vec<proc_macro2::TokenStrea
                 if built_in_type.is_string() {
                     blocks.push(quote! {
                         writer.create_element(#name)
-                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident)))?;
+                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(self.#ident.as_str())))?;
                     })
                 } else if built_in_type.is_bool() {
                     if is_sfc {
@@ -140,14 +141,16 @@ pub fn create_child_blocks(container: &Container) -> Vec<proc_macro2::TokenStrea
                         });
                     } else {
                         blocks.push(quote! {
+                            let value = self.#ident.to_string();
                             writer.create_element(#name)
-                                .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident.to_string())))?;
+                                .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(value.as_str())))?;
                         });
                     }
                 } else if built_in_type.is_number() {
                     blocks.push(quote! {
+                        let value = self.#ident.to_string();
                         writer.create_element(#name)
-                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&self.#ident.to_string())))?;
+                            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(value.as_str())))?;
                     });
                 } else if built_in_type.is_unknown() {
                     blocks.push(quote! {

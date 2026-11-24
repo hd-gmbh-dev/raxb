@@ -3,7 +3,7 @@ use lz4_flex::{block::DecompressError, decompress_size_prepended};
 use std::{collections::HashMap, ops::Range, string::FromUtf8Error};
 use thiserror::Error;
 
-use crate::cnst::{Order, MAGIC_BYTE};
+use crate::cnst::{MAGIC_BYTE, Order};
 pub type SchemaBundleIndex = HashMap<String, Range<usize>>;
 
 #[derive(Error, Debug)]

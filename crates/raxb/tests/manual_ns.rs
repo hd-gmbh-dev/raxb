@@ -3,7 +3,7 @@
 use quick_xml::events::BytesText;
 use quick_xml::{events::Event, name::ResolveResult};
 use raxb::de::{XmlDeserialize, XmlDeserializeError};
-use raxb::ser::{XmlSerialize, XmlSerializeError};
+use raxb::ser::XmlSerialize;
 use raxb::ty::S;
 
 #[derive(Debug)]
@@ -40,8 +40,10 @@ where
         let mut body = Option::<T>::None;
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Bound(ns), Event::Start(ev)) if ns.as_ref() == target_ns => {
-                    match ev.local_name().as_ref() {
+                (ResolveResult::Bound(ns), Event::Start(ev))
+                    if ns.as_ref().as_bytes() == target_ns =>
+                {
+                    match ev.local_name().as_ref().as_bytes() {
                         b"Body" => {
                             body = Some(T::xml_deserialize(
                                 reader,
@@ -58,7 +60,8 @@ where
                     }
                 }
                 (ResolveResult::Bound(ns), Event::End(e))
-                    if ns.as_ref() == target_ns && e.local_name().as_ref() == tag =>
+                    if ns.as_ref().as_bytes() == target_ns
+                        && e.local_name().as_ref().as_bytes() == tag =>
                 {
                     break;
                 }
@@ -94,7 +97,7 @@ where
             "xmlns:SOAP-ENV",
             "https://schemas.xmlsoap.org/soap/envelope/",
         ));
-        el_writer.write_inner_content::<_, XmlSerializeError>(|writer| {
+        el_writer.write_inner_content(|writer| {
             writer.create_element("SOAP-ENV:Header").write_empty()?;
             self.body.xml_serialize("SOAP-ENV:Body", writer)?;
             Ok(())
@@ -133,9 +136,15 @@ impl XmlDeserialize for Header {
         let mut content: Option<String> = Option::<String>::None;
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (_, Event::Text(ev)) => content = Some(ev.unescape()?.to_string()),
+                (_, Event::Text(ev)) => {
+                    content = Some(
+                        ev.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                            .to_string(),
+                    )
+                }
                 (ResolveResult::Bound(ns), Event::End(e))
-                    if e.local_name().as_ref() == tag && ns.as_ref() == target_ns =>
+                    if e.local_name().as_ref().as_bytes() == tag
+                        && ns.as_ref().as_bytes() == target_ns =>
                 {
                     break;
                 }
@@ -196,8 +205,10 @@ impl XmlDeserialize for Example {
         let mut header = Option::<Header>::None;
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Bound(ns), Event::Start(ev)) if ns.as_ref() == target_ns => {
-                    match ev.local_name().as_ref() {
+                (ResolveResult::Bound(ns), Event::Start(ev))
+                    if ns.as_ref().as_bytes() == target_ns =>
+                {
+                    match ev.local_name().as_ref().as_bytes() {
                         b"header" => {
                             header = Some(Header::xml_deserialize(
                                 reader,
@@ -214,7 +225,8 @@ impl XmlDeserialize for Example {
                     }
                 }
                 (ResolveResult::Bound(ns), Event::End(e))
-                    if e.local_name().as_ref() == tag && ns.as_ref() == target_ns =>
+                    if e.local_name().as_ref().as_bytes() == tag
+                        && ns.as_ref().as_bytes() == target_ns =>
                 {
                     break;
                 }
@@ -237,12 +249,10 @@ impl XmlSerialize for Example {
         tag: &str,
         writer: &mut quick_xml::Writer<W>,
     ) -> raxb::ser::XmlSerializeResult<()> {
-        writer
-            .create_element(tag)
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
-                self.header.xml_serialize("example:header", writer)?;
-                Ok(())
-            })?;
+        writer.create_element(tag).write_inner_content(|writer| {
+            self.header.xml_serialize("example:header", writer)?;
+            Ok(())
+        })?;
         Ok(())
     }
 }

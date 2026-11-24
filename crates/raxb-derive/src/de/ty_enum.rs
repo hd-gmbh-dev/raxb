@@ -19,19 +19,14 @@ fn create_variant(
         let built_in_type = get_built_in_type(ty);
         let assignment = if built_in_type.is_bool() || built_in_type.is_number() {
             quote! {
-                let value = if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buf)? {
-                    let str_value = t.unescape()?;
-                    let value : #ty = str_value.parse().unwrap_or_default();
-                    result = Some(#ident::#variant_ident(value));
-                };
+                let str_value = _raxb::de::read_text_content(reader, #name)?;
+                let value : #ty = str_value.parse().unwrap_or_default();
+                result = Some(#ident::#variant_ident(value));
             }
         } else if built_in_type.is_string() {
             quote! {
-                let value = if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buf)? {
-                    let str_value = t.unescape()?;
-                    let value = str_value.to_string();
-                    result = Some(#ident::#variant_ident(value));
-                };
+                let value = _raxb::de::read_text_content(reader, #name)?;
+                result = Some(#ident::#variant_ident(value));
             }
         } else {
             quote! {
@@ -153,7 +148,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     loop {
                         match reader.read_resolved_event_into(&mut buf)? {
                             (ResolveResult::Unbound, Event::Start(e)) => {
-                                match e.local_name().as_ref() {
+                                match e.local_name().as_ref().as_bytes() {
                                     #(#unqualified_variants)*
                                     _ => {
                                         let mut buf = Vec::<u8>::new();
@@ -162,13 +157,13 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                                 }
                             }
                             (ResolveResult::Unbound, Event::Empty(e)) => {
-                                match e.local_name().as_ref() {
+                                match e.local_name().as_ref().as_bytes() {
                                     #(#unqualified_empty_variants)*
                                     _ => {}
                                 }
                             }
-                            (ResolveResult::Bound(ns), Event::Start(e)) => if ns.as_ref() == target_ns {
-                                match e.local_name().as_ref() {
+                            (ResolveResult::Bound(ns), Event::Start(e)) => if ns.as_ref().as_bytes() == target_ns {
+                                match e.local_name().as_ref().as_bytes() {
                                     #(#qualified_variants)*
                                     _ => {
                                         let mut buf = Vec::<u8>::new();
@@ -176,8 +171,8 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                                     }
                                 }
                             }
-                            (ResolveResult::Bound(ns), Event::Empty(e)) => if ns.as_ref() == target_ns {
-                                match e.local_name().as_ref() {
+                            (ResolveResult::Bound(ns), Event::Empty(e)) => if ns.as_ref().as_bytes() == target_ns {
+                                match e.local_name().as_ref().as_bytes() {
                                     #(#qualified_empty_variants)*
                                     _ => {}
                                 }
@@ -194,11 +189,11 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                         } else {
                             loop {
                                 match reader.read_resolved_event_into(&mut buf)? {
-                                    (ResolveResult::Bound(ns), Event::End(e)) => if ns.as_ref() == target_ns && e.local_name().as_ref() == tag {
+                                    (ResolveResult::Bound(ns), Event::End(e)) => if ns.as_ref().as_bytes() == target_ns && e.local_name().as_ref().as_bytes() == tag {
                                         #trace_leave_enum
                                         break;
                                     },
-                                    (ResolveResult::Unbound, Event::End(e)) => if e.local_name().as_ref() == tag {
+                                    (ResolveResult::Unbound, Event::End(e)) => if e.local_name().as_ref().as_bytes() == tag {
                                         #trace_leave_enum
                                         break;
                                     },

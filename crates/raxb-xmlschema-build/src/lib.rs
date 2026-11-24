@@ -1,6 +1,6 @@
-use raxb::{de::XmlDeserializeError, XmlDeserialize};
+use raxb::{XmlDeserialize, de::XmlDeserializeError};
 use raxb_xmlschema::writer::{
-    create_filepath, SchemaEntry, SchemaLocation, SchemaWriter, WriterError,
+    SchemaEntry, SchemaLocation, SchemaWriter, WriterError, create_filepath,
 };
 use std::{
     collections::BTreeMap,
@@ -126,9 +126,7 @@ impl XmlSchemaRegistry {
                         filepath = Some(create_filepath(&out_dir, &tns));
                     }
                 }
-                for XsdImportOrInclude { schema_location } in
-                    imports.into_iter().chain(includes.into_iter())
-                {
+                for XsdImportOrInclude { schema_location } in imports.into_iter().chain(includes) {
                     schema_list.push(Schema {
                         location: {
                             if !schema_location.starts_with("http") {

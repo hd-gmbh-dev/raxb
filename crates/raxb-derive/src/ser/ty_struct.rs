@@ -46,7 +46,7 @@ fn create_root_element_impl(container: &Container) -> proc_macro2::TokenStream {
         let child_blocks = child_blocks.into_iter();
         quote! {
             el_writer
-                .write_inner_content::<_, _raxb::ser::XmlSerializeError>(|writer| {
+                .write_inner_content(|writer| {
                     #(#child_blocks)*
                     Ok(())
                 })?;

@@ -25,6 +25,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .clang_arg(format!("-I{}", libxml_build_absolute_path.display()))
         .header("bindings.h")
+        .rust_edition(bindgen::RustEdition::Edition2024)
         .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
         .allowlist_type("xmlCharEncoding_XML_CHAR_ENCODING_UTF8")
         .allowlist_function("xmlInitParser")

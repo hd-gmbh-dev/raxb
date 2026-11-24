@@ -1,16 +1,16 @@
 #![allow(clippy::single_match)]
 
 use quick_xml::{
-    escape::escape,
-    events::{attributes::Attributes, BytesText, Event},
-    name::ResolveResult,
     NsReader,
+    escape::escape,
+    events::{BytesText, Event, attributes::Attributes},
+    name::ResolveResult,
 };
 
 use raxb::{
     de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult},
-    ser::{XmlSerialize, XmlSerializeError},
-    ty::{XmlTag, XmlTargetNs, S},
+    ser::XmlSerialize,
+    ty::{S, XmlTag, XmlTargetNs},
 };
 use std::io::BufRead;
 
@@ -38,29 +38,39 @@ impl XmlDeserialize for F {
 
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Start(ev)) => match ev.local_name().as_ref() {
-                    b"h" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            h = Some(t.unescape()?.to_string());
+                (ResolveResult::Unbound, Event::Start(ev)) => {
+                    match ev.local_name().as_ref().as_bytes() {
+                        b"h" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                h = Some(
+                                    t.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                        .to_string(),
+                                );
+                            }
+                        }
+                        b"j" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                j = Some(
+                                    t.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                        .to_string(),
+                                );
+                            }
+                        }
+                        _ => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            reader.read_to_end_into(ev.name(), &mut buffer)?;
                         }
                     }
-                    b"j" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            j = Some(t.unescape()?.to_string());
-                        }
-                    }
-                    _ => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        reader.read_to_end_into(ev.name(), &mut buffer)?;
-                    }
-                },
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                }
+                (ResolveResult::Unbound, Event::End(e))
+                    if e.local_name().as_ref().as_bytes() == tag =>
+                {
                     break;
                 }
                 (ResolveResult::Unbound, Event::Eof) => {
@@ -83,19 +93,17 @@ impl XmlSerialize for F {
         tag: &str,
         writer: &mut quick_xml::Writer<W>,
     ) -> raxb::ser::XmlSerializeResult<()> {
-        writer
-            .create_element(tag)
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
-                if let Some(v) = self.h.as_ref() {
-                    writer
-                        .create_element("h")
-                        .write_text_content(BytesText::from_escaped(escape(v)))?;
-                }
+        writer.create_element(tag).write_inner_content(|writer| {
+            if let Some(v) = self.h.as_ref() {
                 writer
-                    .create_element("j")
-                    .write_text_content(BytesText::from_escaped(escape(&self.j)))?;
-                Ok(())
-            })?;
+                    .create_element("h")
+                    .write_text_content(BytesText::from_escaped(escape(v)))?;
+            }
+            writer
+                .create_element("j")
+                .write_text_content(BytesText::from_escaped(escape(&self.j)))?;
+            Ok(())
+        })?;
         Ok(())
     }
 }
@@ -123,9 +131,9 @@ impl XmlDeserialize for D {
 
         let mut name = Option::<String>::None;
         for attr in attributes.flatten() {
-            match attr.key.local_name().as_ref() {
+            match attr.key.local_name().as_ref().as_bytes() {
                 b"name" => {
-                    name = Some(String::from_utf8(attr.value.to_vec())?);
+                    name = Some(attr.value.to_string());
                 }
                 _ => {}
             }
@@ -136,31 +144,37 @@ impl XmlDeserialize for D {
 
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Start(ev)) => match ev.local_name().as_ref() {
-                    b"e" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            let v = t.unescape()?.parse::<i32>()?;
-                            e.push(v);
+                (ResolveResult::Unbound, Event::Start(ev)) => {
+                    match ev.local_name().as_ref().as_bytes() {
+                        b"e" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                let v = t
+                                    .xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                    .parse::<i32>()?;
+                                e.push(v);
+                            }
+                        }
+                        b"f" => {
+                            f.push(F::xml_deserialize(
+                                reader,
+                                target_ns,
+                                b"f",
+                                ev.attributes(),
+                                false,
+                            )?);
+                        }
+                        _ => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            reader.read_to_end_into(ev.name(), &mut buffer)?;
                         }
                     }
-                    b"f" => {
-                        f.push(F::xml_deserialize(
-                            reader,
-                            target_ns,
-                            b"f",
-                            ev.attributes(),
-                            false,
-                        )?);
-                    }
-                    _ => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        reader.read_to_end_into(ev.name(), &mut buffer)?;
-                    }
-                },
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                }
+                (ResolveResult::Unbound, Event::End(e))
+                    if e.local_name().as_ref().as_bytes() == tag =>
+                {
                     break;
                 }
                 (ResolveResult::Unbound, Event::Eof) => {
@@ -187,11 +201,11 @@ impl XmlSerialize for D {
         writer
             .create_element(tag)
             .with_attribute(("name", self.name.as_str()))
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
+            .write_inner_content(|writer| {
                 for v in self.e.iter() {
                     writer
                         .create_element("e")
-                        .write_text_content(BytesText::from_escaped(escape(&v.to_string())))?;
+                        .write_text_content(BytesText::from_escaped(escape(v.to_string())))?;
                 }
                 for v in self.f.iter() {
                     v.xml_serialize("f", writer)?;
@@ -230,9 +244,9 @@ impl XmlDeserialize for A {
 
         let mut id = Option::<String>::None;
         for attr in attributes.flatten() {
-            match attr.key.local_name().as_ref() {
+            match attr.key.local_name().as_ref().as_bytes() {
                 b"id" => {
-                    id = Some(String::from_utf8(attr.value.to_vec())?);
+                    id = Some(attr.value.to_string());
                 }
                 _ => {}
             }
@@ -244,36 +258,45 @@ impl XmlDeserialize for A {
 
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (ResolveResult::Unbound, Event::Start(e)) => match e.local_name().as_ref() {
-                    b"c" => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (ResolveResult::Unbound, Event::Text(t)) =
-                            reader.read_resolved_event_into(&mut buffer)?
-                        {
-                            c = Some(t.unescape()?.to_string());
+                (ResolveResult::Unbound, Event::Start(e)) => {
+                    match e.local_name().as_ref().as_bytes() {
+                        b"c" => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            if let (ResolveResult::Unbound, Event::Text(t)) =
+                                reader.read_resolved_event_into(&mut buffer)?
+                            {
+                                c = Some(
+                                    t.xml_content(quick_xml::XmlVersion::Explicit1_0)
+                                        .to_string(),
+                                );
+                            }
+                        }
+                        b"d" => {
+                            d = Some(D::xml_deserialize(
+                                reader,
+                                target_ns,
+                                b"d",
+                                e.attributes(),
+                                false,
+                            )?)
+                        }
+                        _ => {
+                            let mut buffer: Vec<u8> = Vec::<u8>::new();
+                            reader.read_to_end_into(e.name(), &mut buffer)?;
                         }
                     }
-                    b"d" => {
-                        d = Some(D::xml_deserialize(
-                            reader,
-                            target_ns,
-                            b"d",
-                            e.attributes(),
-                            false,
-                        )?)
+                }
+                (ResolveResult::Unbound, Event::Empty(e)) => {
+                    match e.local_name().as_ref().as_bytes() {
+                        b"b" => {
+                            b = Some(true);
+                        }
+                        _ => {}
                     }
-                    _ => {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        reader.read_to_end_into(e.name(), &mut buffer)?;
-                    }
-                },
-                (ResolveResult::Unbound, Event::Empty(e)) => match e.local_name().as_ref() {
-                    b"b" => {
-                        b = Some(true);
-                    }
-                    _ => {}
-                },
-                (ResolveResult::Unbound, Event::End(e)) if e.local_name().as_ref() == tag => {
+                }
+                (ResolveResult::Unbound, Event::End(e))
+                    if e.local_name().as_ref().as_bytes() == tag =>
+                {
                     break;
                 }
                 (_, Event::Eof) => {
@@ -304,7 +327,7 @@ impl XmlSerialize for A {
         writer
             .create_element(tag)
             .with_attribute(("id", self.id.as_str()))
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
+            .write_inner_content(|writer| {
                 if self.b {
                     writer.create_element("b").write_empty()?;
                 }

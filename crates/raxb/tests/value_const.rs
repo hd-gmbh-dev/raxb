@@ -1,4 +1,4 @@
-use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
+use raxb::{XmlDeserialize, XmlSerialize, value::ConstStr};
 
 // Private constants for attribute values (test scope only)
 const DEFAULT_NS: &str = "https://my.example.org/";

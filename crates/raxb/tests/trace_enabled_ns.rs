@@ -1,4 +1,4 @@
-use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
+use raxb::{XmlDeserialize, XmlSerialize, value::ConstStr};
 
 #[allow(dead_code)]
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]

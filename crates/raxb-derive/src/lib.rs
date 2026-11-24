@@ -20,7 +20,7 @@ mod symbol;
 mod utils;
 
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 use de::xml_deserialize_impl_block;
 use ser::xml_serialize_impl_block;
