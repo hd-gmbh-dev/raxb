@@ -414,10 +414,10 @@ fn get_lit_byte_str(expr: syn::Expr) -> Option<NsValue> {
 }
 
 fn get_lit_str(lit: &syn::Expr) -> Result<&syn::LitStr, ()> {
-    if let syn::Expr::Lit(lit) = lit {
-        if let syn::Lit::Str(l) = &lit.lit {
-            return Ok(l);
-        }
+    if let syn::Expr::Lit(lit) = lit
+        && let syn::Lit::Str(l) = &lit.lit
+    {
+        return Ok(l);
     }
     Err(())
 }

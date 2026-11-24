@@ -54,10 +54,9 @@ pub fn create_attribute_blocks(container: &Container) -> Vec<proc_macro2::TokenS
                 })
             }
             Generic::None => {
-                if f.value.is_some()
+                if let Some(const_val) = f.value.as_ref()
                     && matches!(get_built_in_const_type(ty), BuiltInConstType::ConstStr)
                 {
-                    let const_val = f.value.as_ref().unwrap();
                     let value = match const_val {
                         StringValue::LitStr(lit) => quote! { #lit },
                         StringValue::ExprPath(path) => quote! { #path },

@@ -37,27 +37,26 @@ pub fn create_assignments(fields: &FieldsSummary) -> proc_macro2::TokenStream {
         } else {
             ty
         };
-        if let syn::Type::Path(p) = ty {
-            if let Some(ty_ident) = p.path.get_ident() {
-                let built_in_type =
-                    BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
-                if built_in_type.is_string() {
-                    return Some(quote! {
-                        #name => {
-                            let value_str = String::from_utf8(attr.value.to_vec())?;
-                            let value = _raxb::quick_xml::escape::unescape(&value_str)?;
-                            #ident = Some(value.to_string());
-                        }
-                    });
-                } else {
-                    return Some(quote! {
-                        #name => {
-                            let value_str = String::from_utf8(attr.value.to_vec())?;
-                            let value = _raxb::quick_xml::escape::unescape(&value_str)?;
-                            #ident = Some(value.trim().parse().unwrap_or_default());
-                        }
-                    });
-                }
+        if let syn::Type::Path(p) = ty
+            && let Some(ty_ident) = p.path.get_ident()
+        {
+            let built_in_type = BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
+            if built_in_type.is_string() {
+                return Some(quote! {
+                    #name => {
+                        let value_str = String::from_utf8(attr.value.to_vec())?;
+                        let value = _raxb::quick_xml::escape::unescape(&value_str)?;
+                        #ident = Some(value.to_string());
+                    }
+                });
+            } else {
+                return Some(quote! {
+                    #name => {
+                        let value_str = String::from_utf8(attr.value.to_vec())?;
+                        let value = _raxb::quick_xml::escape::unescape(&value_str)?;
+                        #ident = Some(value.trim().parse().unwrap_or_default());
+                    }
+                });
             }
         }
         None

@@ -30,32 +30,32 @@ fn create_assing_value(
             #ident = Some(value);
         }
     };
-    if let syn::Type::Path(p) = ty {
-        if let Some(ty_ident) = p.path.get_ident() {
-            let built_in_ty: BuiltInType =
-                BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
-            return if built_in_ty.is_string() {
-                (
-                    quote! {
-                        let value = text_value;
-                        #assignment
-                    },
-                    Some(quote! {
-                        let value = String::new();
-                        #assignment
-                    }),
-                )
-            } else {
-                (
-                    quote! {
-                        let str_value = text_value;
-                        let value : #ty = str_value.trim().parse()?;
-                        #assignment
-                    },
-                    None,
-                )
-            };
-        }
+    if let syn::Type::Path(p) = ty
+        && let Some(ty_ident) = p.path.get_ident()
+    {
+        let built_in_ty: BuiltInType =
+            BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
+        return if built_in_ty.is_string() {
+            (
+                quote! {
+                    let value = text_value;
+                    #assignment
+                },
+                Some(quote! {
+                    let value = String::new();
+                    #assignment
+                }),
+            )
+        } else {
+            (
+                quote! {
+                    let str_value = text_value;
+                    let value : #ty = str_value.trim().parse()?;
+                    #assignment
+                },
+                None,
+            )
+        };
     }
     (quote! {}, None)
 }

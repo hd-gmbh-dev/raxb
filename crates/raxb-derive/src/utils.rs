@@ -21,19 +21,19 @@ pub fn create_ident(f: &StructField) -> proc_macro2::TokenStream {
 }
 
 pub fn get_built_in_type(ty: &syn::Type) -> BuiltInType {
-    if let syn::Type::Path(p) = ty {
-        if let Some(ty_ident) = p.path.get_ident() {
-            return BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
-        }
+    if let syn::Type::Path(p) = ty
+        && let Some(ty_ident) = p.path.get_ident()
+    {
+        return BuiltInType::from_str(&format!("{ty_ident}")).unwrap_or_default();
     }
     BuiltInType::Unknown
 }
 
 pub fn get_built_in_const_type(ty: &syn::Type) -> BuiltInConstType {
-    if let syn::Type::Path(p) = ty {
-        if let Some(ty_ident) = p.path.get_ident() {
-            return BuiltInConstType::from_str(&format!("{ty_ident}")).unwrap_or_default();
-        }
+    if let syn::Type::Path(p) = ty
+        && let Some(ty_ident) = p.path.get_ident()
+    {
+        return BuiltInConstType::from_str(&format!("{ty_ident}")).unwrap_or_default();
     }
     BuiltInConstType::Unknown
 }

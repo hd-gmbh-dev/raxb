@@ -269,12 +269,11 @@ pub fn find_root_xsi_schema_location(xml: &[u8]) -> Result<String, ValidationErr
         match reader.read_resolved_event_into(&mut buf) {
             Ok((_, Event::Start(ref e))) => {
                 schema_location = e.attributes().find_map(|a| {
-                    if let Ok(attr) = a {
-                        if attr.key.local_name().as_ref() == b"schemaLocation"
-                            || attr.key.local_name().as_ref() == b"noNamespaceSchemaLocation"
-                        {
-                            return String::from_utf8(attr.value.to_vec()).ok();
-                        }
+                    if let Ok(attr) = a
+                        && (attr.key.local_name().as_ref() == b"schemaLocation"
+                            || attr.key.local_name().as_ref() == b"noNamespaceSchemaLocation")
+                    {
+                        return String::from_utf8(attr.value.to_vec()).ok();
                     }
                     None
                 });

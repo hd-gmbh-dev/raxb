@@ -345,27 +345,27 @@ fn create_deserialize_value_sfc(
             #ident = Some(value);
         }
     };
-    if let syn::Type::Path(p) = ty {
-        if let Some(ident) = p.path.get_ident() {
-            let built_in_ty: BuiltInType =
-                BuiltInType::from_str(&format!("{ident}")).unwrap_or_default();
-            if built_in_ty.is_bool() {
+    if let syn::Type::Path(p) = ty
+        && let Some(ident) = p.path.get_ident()
+    {
+        let built_in_ty: BuiltInType =
+            BuiltInType::from_str(&format!("{ident}")).unwrap_or_default();
+        if built_in_ty.is_bool() {
+            return quote! {
+                let value = true;
+                #assignment
+            };
+        } else if built_in_ty.is_unknown() {
+            if default {
                 return quote! {
-                    let value = true;
+                    let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true).unwrap_or_default();
                     #assignment
                 };
-            } else if built_in_ty.is_unknown() {
-                if default {
-                    return quote! {
-                        let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true).unwrap_or_default();
-                        #assignment
-                    };
-                } else {
-                    return quote! {
-                        let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true)?;
-                        #assignment
-                    };
-                }
+            } else {
+                return quote! {
+                    let value = #ty::xml_deserialize(reader, &[], #tag, ev.attributes(), true)?;
+                    #assignment
+                };
             }
         }
     }
@@ -409,27 +409,15 @@ fn create_deserialize_value(
                     false,
                 );
             } else if built_in_ty.is_bool() || built_in_ty.is_number() {
-                if default {
-                    return (
-                        quote! {
-                            let str_value = _raxb::de::read_text_content(reader, #tag)?;
-                            let value : #ty = str_value.trim().parse().unwrap_or_default();
-                            #assignment
-                        },
-                        None,
-                        false,
-                    );
-                } else {
-                    return (
-                        quote! {
-                            let str_value = _raxb::de::read_text_content(reader, #tag)?;
-                            let value : #ty = str_value.trim().parse().unwrap_or_default();
-                            #assignment
-                        },
-                        None,
-                        false,
-                    );
-                }
+                return (
+                    quote! {
+                        let str_value = _raxb::de::read_text_content(reader, #tag)?;
+                        let value : #ty = str_value.trim().parse().unwrap_or_default();
+                        #assignment
+                    },
+                    None,
+                    false,
+                );
             } else if default {
                 return (
                     quote! {
