@@ -344,3 +344,22 @@ fn test_deserialize_array_with_empty_tags() -> anyhow::Result<()> {
     assert_eq!(cl.rows[3]._value, None);
     Ok(())
 }
+
+#[test]
+fn test_entity_references_in_text() -> anyhow::Result<()> {
+    #[derive(Debug, XmlDeserialize)]
+    #[xml(root = b"r")]
+    pub struct R {
+        #[xml(ty = "text")]
+        pub text: String,
+    }
+
+    let a = raxb::de::from_str::<A>(
+        r#"<a id="x"><b/><c>a &amp; b &lt;c&gt; &#65;</c><d name="n"/></a>"#,
+    )?;
+    assert_eq!(a.c, "a & b <c> A");
+
+    let r = raxb::de::from_str::<R>("<r>x &amp; y</r>")?;
+    assert_eq!(r.text, "x & y");
+    Ok(())
+}

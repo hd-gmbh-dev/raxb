@@ -19,19 +19,14 @@ fn create_variant(
         let built_in_type = get_built_in_type(ty);
         let assignment = if built_in_type.is_bool() || built_in_type.is_number() {
             quote! {
-                let value = if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buf)? {
-                    let str_value = t.unescape()?;
-                    let value : #ty = str_value.parse().unwrap_or_default();
-                    result = Some(#ident::#variant_ident(value));
-                };
+                let str_value = _raxb::de::read_text_content(reader, #name)?;
+                let value : #ty = str_value.parse().unwrap_or_default();
+                result = Some(#ident::#variant_ident(value));
             }
         } else if built_in_type.is_string() {
             quote! {
-                let value = if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buf)? {
-                    let str_value = t.unescape()?;
-                    let value = str_value.to_string();
-                    result = Some(#ident::#variant_ident(value));
-                };
+                let value = _raxb::de::read_text_content(reader, #name)?;
+                result = Some(#ident::#variant_ident(value));
             }
         } else {
             quote! {

@@ -68,7 +68,7 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                     Self::#variant_ident(v) => {
                         writer.create_element(#name).write_text_content(
                             _raxb::quick_xml::events::BytesText::from_escaped(
-                                _raxb::quick_xml::escape::escape(&v),
+                                _raxb::quick_xml::escape::escape(v.as_str()),
                             ),
                         )?;
                         Ok::<(), _raxb::ser::XmlSerializeError>(())
@@ -125,7 +125,8 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
                         writer.create_element(tag).write_inner_content(|writer| {
                             match self {
                                 #(#serialize_branches_2,)*
-                            }
+                            }?;
+                            Ok(())
                         })?;
                     }
                     Ok::<(), _raxb::ser::XmlSerializeError>(())

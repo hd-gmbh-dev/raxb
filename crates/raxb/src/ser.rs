@@ -14,8 +14,16 @@ pub enum XmlSerializeError {
     Utf8String(#[from] FromUtf8Error),
     #[error(transparent)]
     Utf8Error(#[from] Utf8Error),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
     #[error("missing root element name, try to implement 'fn root() -> XmlTag {{ b\"my-root-element-name\" }}'")]
     MissingRoot,
+}
+
+impl From<XmlSerializeError> for std::io::Error {
+    fn from(e: XmlSerializeError) -> Self {
+        std::io::Error::other(e)
+    }
 }
 
 pub type XmlSerializeResult<T> = Result<T, XmlSerializeError>;

@@ -3,7 +3,7 @@
 use quick_xml::events::BytesText;
 use quick_xml::{events::Event, name::ResolveResult};
 use raxb::de::{XmlDeserialize, XmlDeserializeError};
-use raxb::ser::{XmlSerialize, XmlSerializeError};
+use raxb::ser::XmlSerialize;
 use raxb::ty::S;
 
 #[derive(Debug)]
@@ -94,7 +94,7 @@ where
             "xmlns:SOAP-ENV",
             "https://schemas.xmlsoap.org/soap/envelope/",
         ));
-        el_writer.write_inner_content::<_, XmlSerializeError>(|writer| {
+        el_writer.write_inner_content(|writer| {
             writer.create_element("SOAP-ENV:Header").write_empty()?;
             self.body.xml_serialize("SOAP-ENV:Body", writer)?;
             Ok(())
@@ -133,7 +133,12 @@ impl XmlDeserialize for Header {
         let mut content: Option<String> = Option::<String>::None;
         loop {
             match reader.read_resolved_event_into(&mut buf)? {
-                (_, Event::Text(ev)) => content = Some(ev.unescape()?.to_string()),
+                (_, Event::Text(ev)) => {
+                    content = Some(
+                        ev.xml_content(quick_xml::XmlVersion::Explicit1_0)?
+                            .to_string(),
+                    )
+                }
                 (ResolveResult::Bound(ns), Event::End(e))
                     if e.local_name().as_ref() == tag && ns.as_ref() == target_ns =>
                 {
@@ -237,12 +242,10 @@ impl XmlSerialize for Example {
         tag: &str,
         writer: &mut quick_xml::Writer<W>,
     ) -> raxb::ser::XmlSerializeResult<()> {
-        writer
-            .create_element(tag)
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
-                self.header.xml_serialize("example:header", writer)?;
-                Ok(())
-            })?;
+        writer.create_element(tag).write_inner_content(|writer| {
+            self.header.xml_serialize("example:header", writer)?;
+            Ok(())
+        })?;
         Ok(())
     }
 }

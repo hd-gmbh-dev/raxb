@@ -399,14 +399,8 @@ fn create_deserialize_value(
             if built_in_ty.is_string() {
                 return (
                     quote! {
-                        let mut buffer: Vec<u8> = Vec::<u8>::new();
-                        if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                            let value = t.unescape()?.to_string();
-                            #assignment
-                        } else {
-                            let value = "".to_string();
-                            #assignment
-                        }
+                        let value = _raxb::de::read_text_content(reader, #tag)?;
+                        #assignment
                     },
                     Some(quote! {
                         let value = String::new();
@@ -418,15 +412,9 @@ fn create_deserialize_value(
                 if default {
                     return (
                         quote! {
-                            let mut buffer: Vec<u8> = Vec::<u8>::new();
-                            if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                                let str_value = t.unescape()?;
-                                let value : #ty = str_value.trim().parse().unwrap_or_default();
-                                #assignment
-                            } else {
-                                let value = #ty::default();
-                                #assignment
-                            }
+                            let str_value = _raxb::de::read_text_content(reader, #tag)?;
+                            let value : #ty = str_value.trim().parse().unwrap_or_default();
+                            #assignment
                         },
                         None,
                         false,
@@ -434,12 +422,9 @@ fn create_deserialize_value(
                 } else {
                     return (
                         quote! {
-                            let mut buffer: Vec<u8> = Vec::<u8>::new();
-                            if let (_, Event::Text(t)) = reader.read_resolved_event_into(&mut buffer)? {
-                                let str_value = t.unescape()?;
-                                let value : #ty = str_value.trim().parse().unwrap_or_default();
-                                #assignment
-                            }
+                            let str_value = _raxb::de::read_text_content(reader, #tag)?;
+                            let value : #ty = str_value.trim().parse().unwrap_or_default();
+                            #assignment
                         },
                         None,
                         false,

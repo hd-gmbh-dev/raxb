@@ -9,7 +9,7 @@ use quick_xml::{
 
 use raxb::{
     de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult},
-    ser::{XmlSerialize, XmlSerializeError},
+    ser::XmlSerialize,
     ty::{XmlTag, XmlTargetNs, S},
 };
 use std::io::BufRead;
@@ -44,7 +44,10 @@ impl XmlDeserialize for F {
                         if let (ResolveResult::Unbound, Event::Text(t)) =
                             reader.read_resolved_event_into(&mut buffer)?
                         {
-                            h = Some(t.unescape()?.to_string());
+                            h = Some(
+                                t.xml_content(quick_xml::XmlVersion::Explicit1_0)?
+                                    .to_string(),
+                            );
                         }
                     }
                     b"j" => {
@@ -52,7 +55,10 @@ impl XmlDeserialize for F {
                         if let (ResolveResult::Unbound, Event::Text(t)) =
                             reader.read_resolved_event_into(&mut buffer)?
                         {
-                            j = Some(t.unescape()?.to_string());
+                            j = Some(
+                                t.xml_content(quick_xml::XmlVersion::Explicit1_0)?
+                                    .to_string(),
+                            );
                         }
                     }
                     _ => {
@@ -83,19 +89,17 @@ impl XmlSerialize for F {
         tag: &str,
         writer: &mut quick_xml::Writer<W>,
     ) -> raxb::ser::XmlSerializeResult<()> {
-        writer
-            .create_element(tag)
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
-                if let Some(v) = self.h.as_ref() {
-                    writer
-                        .create_element("h")
-                        .write_text_content(BytesText::from_escaped(escape(v)))?;
-                }
+        writer.create_element(tag).write_inner_content(|writer| {
+            if let Some(v) = self.h.as_ref() {
                 writer
-                    .create_element("j")
-                    .write_text_content(BytesText::from_escaped(escape(&self.j)))?;
-                Ok(())
-            })?;
+                    .create_element("h")
+                    .write_text_content(BytesText::from_escaped(escape(v)))?;
+            }
+            writer
+                .create_element("j")
+                .write_text_content(BytesText::from_escaped(escape(&self.j)))?;
+            Ok(())
+        })?;
         Ok(())
     }
 }
@@ -142,7 +146,9 @@ impl XmlDeserialize for D {
                         if let (ResolveResult::Unbound, Event::Text(t)) =
                             reader.read_resolved_event_into(&mut buffer)?
                         {
-                            let v = t.unescape()?.parse::<i32>()?;
+                            let v = t
+                                .xml_content(quick_xml::XmlVersion::Explicit1_0)?
+                                .parse::<i32>()?;
                             e.push(v);
                         }
                     }
@@ -187,11 +193,11 @@ impl XmlSerialize for D {
         writer
             .create_element(tag)
             .with_attribute(("name", self.name.as_str()))
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
+            .write_inner_content(|writer| {
                 for v in self.e.iter() {
                     writer
                         .create_element("e")
-                        .write_text_content(BytesText::from_escaped(escape(&v.to_string())))?;
+                        .write_text_content(BytesText::from_escaped(escape(v.to_string())))?;
                 }
                 for v in self.f.iter() {
                     v.xml_serialize("f", writer)?;
@@ -250,7 +256,10 @@ impl XmlDeserialize for A {
                         if let (ResolveResult::Unbound, Event::Text(t)) =
                             reader.read_resolved_event_into(&mut buffer)?
                         {
-                            c = Some(t.unescape()?.to_string());
+                            c = Some(
+                                t.xml_content(quick_xml::XmlVersion::Explicit1_0)?
+                                    .to_string(),
+                            );
                         }
                     }
                     b"d" => {
@@ -304,7 +313,7 @@ impl XmlSerialize for A {
         writer
             .create_element(tag)
             .with_attribute(("id", self.id.as_str()))
-            .write_inner_content::<_, XmlSerializeError>(|writer| {
+            .write_inner_content(|writer| {
                 if self.b {
                     writer.create_element("b").write_empty()?;
                 }
