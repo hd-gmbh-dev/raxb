@@ -1,4 +1,4 @@
-use crate::cnst::{Order, MAGIC_BYTE};
+use crate::cnst::{MAGIC_BYTE, Order};
 use lz4_flex::block::compress_prepend_size;
 use std::{collections::BTreeMap, path::PathBuf, string::FromUtf8Error};
 use thiserror::Error;

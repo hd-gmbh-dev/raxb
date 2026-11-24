@@ -1,9 +1,9 @@
 use strum::EnumString;
 use syn::{
-    punctuated::Punctuated,
-    token::Comma,
     Meta::{self, NameValue, Path},
     Variant,
+    punctuated::Punctuated,
+    token::Comma,
 };
 
 use crate::symbol::*;
@@ -91,7 +91,9 @@ impl<'a> Container<'a> {
 
     pub fn validate(&self) {
         if self.root.is_some() && self.is_enum() {
-            panic!("for clarity, enum should not have the root attribute. please use a struct to wrap the enum and set its type to untag")
+            panic!(
+                "for clarity, enum should not have the root attribute. please use a struct to wrap the enum and set its type to untag"
+            )
         }
     }
 
@@ -131,7 +133,9 @@ impl<'a> Container<'a> {
 
                     // ---- second argument can be literal OR identifier ----
                     let Some(ns_val) = get_lit_byte_str(second) else {
-                        panic!("second tns argument must be a byte string literal or a const identifier");
+                        panic!(
+                            "second tns argument must be a byte string literal or a const identifier"
+                        );
                     };
 
                     tns = Some((prefix, ns_val));

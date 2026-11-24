@@ -1,6 +1,6 @@
-use raxb::{de::XmlDeserializeError, XmlDeserialize};
+use raxb::{XmlDeserialize, de::XmlDeserializeError};
 use raxb_xmlschema::writer::{
-    create_filepath, SchemaEntry, SchemaLocation, SchemaWriter, WriterError,
+    SchemaEntry, SchemaLocation, SchemaWriter, WriterError, create_filepath,
 };
 use std::{
     collections::BTreeMap,

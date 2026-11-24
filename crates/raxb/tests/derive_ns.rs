@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
+use raxb::{XmlDeserialize, XmlSerialize, value::ConstStr};
 
 #[derive(Debug, XmlDeserialize, XmlSerialize)]
 #[xml(root = b"Envelope")]

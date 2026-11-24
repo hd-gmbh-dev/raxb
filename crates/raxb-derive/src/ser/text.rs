@@ -21,8 +21,9 @@ fn write_text_value_ref() -> proc_macro2::TokenStream {
 
 fn write_any_value() -> proc_macro2::TokenStream {
     quote! {
+        let value = value.to_string();
         el_writer
-            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(&value.to_string())))?;
+            .write_text_content(_raxb::quick_xml::events::BytesText::from_escaped(_raxb::quick_xml::escape::escape(value.as_str())))?;
     }
 }
 

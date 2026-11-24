@@ -1,4 +1,4 @@
-use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
+use raxb::{XmlDeserialize, XmlSerialize, value::ConstStr};
 
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[xml(root = b"a")]

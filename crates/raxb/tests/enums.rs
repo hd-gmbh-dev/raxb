@@ -1,8 +1,8 @@
 use quick_xml::{events::Event, name::ResolveResult};
 use raxb::{
+    XmlDeserialize,
     de::{XmlDeserialize, XmlDeserializeError},
     ty::S,
-    XmlDeserialize,
 };
 
 #[derive(Default, Debug, XmlDeserialize, PartialEq, Eq)]

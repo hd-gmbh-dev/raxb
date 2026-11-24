@@ -1,4 +1,4 @@
-use raxb::{de::XmlDeserializeError, ty::S, XmlDeserialize, XmlSerialize};
+use raxb::{XmlDeserialize, XmlSerialize, de::XmlDeserializeError, ty::S};
 
 #[derive(Default, Debug, XmlDeserialize, XmlSerialize, PartialEq, Eq)]
 #[raxb(root = b"a")]

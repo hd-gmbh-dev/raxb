@@ -1,4 +1,4 @@
-use raxb::{value::ConstStr, XmlDeserialize, XmlSerialize};
+use raxb::{XmlDeserialize, XmlSerialize, value::ConstStr};
 
 // Private constant for namespace (test scope only)
 const EX_NS: &[u8] = b"https://my.example.org/";

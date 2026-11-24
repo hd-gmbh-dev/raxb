@@ -8,7 +8,7 @@ use std::string::FromUtf8Error;
 use std::{io::BufRead, num::ParseFloatError};
 use thiserror::Error;
 
-use crate::ty::{XmlTag, XmlTargetNs, S};
+use crate::ty::{S, XmlTag, XmlTargetNs};
 
 pub type XmlDeserializeResult<T> = Result<T, XmlDeserializeError>;
 
@@ -28,7 +28,9 @@ pub enum XmlDeserializeError {
     Bool(#[from] ParseBoolError),
     #[error("empty element, try to add #[raxb(default)] attribute")]
     EmptyNode,
-    #[error("missing root element name, try to implement 'fn root() -> XmlTag {{ b\"my-root-element-name\" }}'")]
+    #[error(
+        "missing root element name, try to implement 'fn root() -> XmlTag {{ b\"my-root-element-name\" }}'"
+    )]
     MissingRoot,
     #[error("missing element name, expected one of {0}")]
     MissingVariant(S),

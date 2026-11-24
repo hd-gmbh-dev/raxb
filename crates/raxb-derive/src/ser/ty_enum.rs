@@ -57,9 +57,8 @@ pub fn impl_block(container: Container) -> proc_macro2::TokenStream {
             } else if built_in_type.is_number() {
                 return Some(quote! {
                     Self::#variant_ident(v) => {
-                        writer.create_element(#name).write_text_content(
-                            &v.to_string()
-                        )?;
+                        let value = v.to_string();
+                        writer.create_element(#name).write_text_content(value.as_str())?;
                         Ok::<(), _raxb::ser::XmlSerializeError>(())
                     }
                 });

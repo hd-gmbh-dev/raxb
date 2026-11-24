@@ -1,16 +1,16 @@
 #![allow(clippy::single_match)]
 
 use quick_xml::{
-    escape::escape,
-    events::{attributes::Attributes, BytesText, Event},
-    name::ResolveResult,
     NsReader,
+    escape::escape,
+    events::{BytesText, Event, attributes::Attributes},
+    name::ResolveResult,
 };
 
 use raxb::{
     de::{XmlDeserialize, XmlDeserializeError, XmlDeserializeResult},
     ser::XmlSerialize,
-    ty::{XmlTag, XmlTargetNs, S},
+    ty::{S, XmlTag, XmlTargetNs},
 };
 use std::io::BufRead;
 

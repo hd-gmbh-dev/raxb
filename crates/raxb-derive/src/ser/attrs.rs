@@ -13,7 +13,7 @@ fn create_attribute_value_impl(ty: &syn::Type) -> proc_macro2::TokenStream {
         };
     }
     quote! {
-        value.to_string().as_str()
+        std::borrow::Cow::Owned(value.to_string())
     }
 }
 

@@ -18,14 +18,14 @@ use std::path::PathBuf;
 use std::ptr::null_mut;
 use std::{ffi::CStr, sync::Mutex};
 
-use raxb::quick_xml::events::Event;
 use raxb::quick_xml::NsReader;
+use raxb::quick_xml::events::Event;
 use raxb_libxml2_sys::{
     _xmlError, xmlCharEncoding_XML_CHAR_ENCODING_UTF8, xmlInitParser,
-    xmlParserInputBufferCreateMem, xmlRegisterInputCallbacks, xmlSAXHandler,
+    xmlParserInputBufferCreateMem, xmlRegisterInputCallbacks, xmlSAXHandler, xmlSchema,
     xmlSchemaFreeParserCtxt, xmlSchemaFreeValidCtxt, xmlSchemaNewMemParserCtxt,
-    xmlSchemaNewValidCtxt, xmlSchemaParse, xmlSchemaParserCtxtPtr, xmlSchemaPtr,
-    xmlSchemaSetValidStructuredErrors, xmlSchemaValidCtxtPtr, xmlSchemaValidateStream,
+    xmlSchemaNewValidCtxt, xmlSchemaParse, xmlSchemaParserCtxt, xmlSchemaSetValidStructuredErrors,
+    xmlSchemaValidCtxt, xmlSchemaValidateStream,
 };
 
 use libc::{c_char, c_int, c_void, memcpy, size_t};
@@ -34,7 +34,7 @@ use raxb_xmlschema::reader::{ReaderError, SchemaBundle, XmlSchemaResolver};
 use thiserror::Error;
 
 #[derive(Clone)]
-pub struct XmlSchemaPtr(pub xmlSchemaPtr);
+pub struct XmlSchemaPtr(pub *mut xmlSchema);
 unsafe impl Send for XmlSchemaPtr {}
 unsafe impl Sync for XmlSchemaPtr {}
 
@@ -148,7 +148,7 @@ extern "C" fn error_cb(ctx: *mut c_void, error: *const _xmlError) {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn match_runtime_fn(filename: *const c_char) -> c_int {
     let filename_cstr = unsafe { CStr::from_ptr(filename) };
     let filename = filename_cstr.to_str().unwrap();
@@ -160,7 +160,7 @@ unsafe extern "C" fn match_runtime_fn(filename: *const c_char) -> c_int {
     0
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn open_runtime_fn(filename: *const c_char) -> *mut c_void {
     let filename_cstr = unsafe { CStr::from_ptr(filename) };
     let filename = filename_cstr.to_str().unwrap();
@@ -177,7 +177,7 @@ extern "C" fn open_runtime_fn(filename: *const c_char) -> *mut c_void {
     null_mut()
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn read_runtime_fn(context: *mut c_void, buffer: *mut c_char, len: c_int) -> c_int {
     let mut l = len;
     unsafe {
@@ -193,7 +193,7 @@ extern "C" fn read_runtime_fn(context: *mut c_void, buffer: *mut c_char, len: c_
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn close_runtime_fn(context: *mut c_void) -> c_int {
     unsafe {
         let _ = Box::from_raw(context as *mut ReadCtx);
@@ -212,9 +212,9 @@ where
             ACTIVE_BUNDLE_PTR = &mut schema_resolver as *mut ActiveSchemaResolver;
             let buffer = (*ACTIVE_BUNDLE_PTR).0.entrypoint();
             let l = buffer.len() - 1;
-            let parser: xmlSchemaParserCtxtPtr =
+            let parser: *mut xmlSchemaParserCtxt =
                 xmlSchemaNewMemParserCtxt(buffer.as_ptr() as *const c_char, l as c_int);
-            let ptr: xmlSchemaPtr = xmlSchemaParse(parser);
+            let ptr: *mut xmlSchema = xmlSchemaParse(parser);
             xmlSchemaFreeParserCtxt(parser);
             if ptr.is_null() {
                 return Err(ValidationError::Internal);
@@ -234,7 +234,7 @@ pub fn validate_xml(xml: &[u8], schema: &XmlSchemaPtr) -> ValidationResult<()> {
             let len = xml.len() as c_int;
             let input =
                 xmlParserInputBufferCreateMem(buffer, len, xmlCharEncoding_XML_CHAR_ENCODING_UTF8);
-            let ctx: xmlSchemaValidCtxtPtr = xmlSchemaNewValidCtxt(schema.0);
+            let ctx: *mut xmlSchemaValidCtxt = xmlSchemaNewValidCtxt(schema.0);
             xmlSchemaSetValidStructuredErrors(
                 ctx,
                 Some(error_cb),
